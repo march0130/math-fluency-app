@@ -48,8 +48,11 @@ let memoryState = {
   currentIndex: 0,
   currentCorrectAnswer: null,
   sequence: [],
+  recallOptionsPool: [],
   recallIndex: 0,
+  recallHadError: false,
   phase: "question",
+  consecutiveSuccesses: 0,
   consecutiveFailures: 0,
   blockQuestions: []
 };
@@ -170,6 +173,26 @@ function uniqueProductsForLevel(level) {
   return questions;
 }
 
+function generateCloseDistractor(product, forbidden = new Set()) {
+  const candidates = [];
+  for (let delta = 1; delta <= 8; delta += 1) {
+    const low = product - delta;
+    const high = product + delta;
+    if (low >= 1 && low <= 81 && !forbidden.has(low)) candidates.push(low);
+    if (high >= 1 && high <= 81 && !forbidden.has(high)) candidates.push(high);
+  }
+
+  if (candidates.length > 0) {
+    return candidates[randomInt(0, candidates.length - 1)];
+  }
+
+  let distractor;
+  do {
+    distractor = randomInt(1, 81);
+  } while (distractor === product || forbidden.has(distractor));
+  return distractor;
+}
+
 function startMemoryTask() {
   showScreen("memory");
   if (memoryTimerId) window.clearInterval(memoryTimerId);
@@ -193,8 +216,11 @@ function startMemoryTask() {
     currentIndex: 0,
     currentCorrectAnswer: null,
     sequence: [],
+    recallOptionsPool: [],
     recallIndex: 0,
+    recallHadError: false,
     phase: "question",
+    consecutiveSuccesses: 0,
     consecutiveFailures: 0,
     blockQuestions: []
   };
@@ -205,14 +231,34 @@ function startMemoryBlock() {
   memoryState.questionsInBlock = memoryState.level;
   memoryState.currentIndex = 0;
   memoryState.sequence = [];
+  memoryState.recallOptionsPool = [];
   memoryState.phase = "question";
+  memoryState.recallHadError = false;
   memoryFeedback.textContent = "";
   memoryRecallFeedback.textContent = "";
   memoryLevelNumber.textContent = String(memoryState.level);
   memoryQuestionPhase.style.display = "block";
   memoryRecallPhase.style.display = "none";
 
-  memoryState.blockQuestions = uniqueProductsForLevel(memoryState.level);
+  const baseQuestions = uniqueProductsForLevel(memoryState.level);
+  const productsInBlock = new Set(baseQuestions.map((q) => q.product));
+  memoryState.blockQuestions = baseQuestions.map((q) => {
+    const forbidden = new Set(productsInBlock);
+    forbidden.delete(q.product);
+    const distractor = generateCloseDistractor(q.product, forbidden);
+    const options = [q.product, distractor];
+    options.sort(() => Math.random() - 0.5);
+    return { ...q, distractor, options };
+  });
+
+  const optionSet = new Set();
+  memoryState.blockQuestions.forEach((q) => {
+    optionSet.add(q.product);
+    optionSet.add(q.distractor);
+  });
+  memoryState.recallOptionsPool = Array.from(optionSet);
+  memoryState.recallOptionsPool.sort(() => Math.random() - 0.5);
+
   showCurrentMemoryQuestion();
 }
 
@@ -225,15 +271,7 @@ function showCurrentMemoryQuestion() {
   memoryQuestionEl.textContent = `${a} × ${b} = ?`;
   memoryOptionsEl.innerHTML = "";
 
-  let distractor;
-  do {
-    distractor = randomInt(1, 81);
-  } while (distractor === product);
-
-  const options = [product, distractor];
-  options.sort(() => Math.random() - 0.5);
-
-  options.forEach((value) => {
+  question.options.forEach((value) => {
     const btn = document.createElement("button");
     btn.className = "option-btn";
     btn.textContent = String(value);
@@ -267,6 +305,7 @@ function handleMemoryAnswer(chosen) {
 function startRecallPhase() {
   memoryState.phase = "recall";
   memoryState.recallIndex = 0;
+  memoryState.recallHadError = false;
   memoryQuestionPhase.style.display = "none";
   memoryRecallPhase.style.display = "block";
   memoryRecallFeedback.textContent = "";
@@ -274,8 +313,7 @@ function startRecallPhase() {
   memoryRecallInstruction.textContent = `Tap the answers in the same order as before (total ${memoryState.sequence.length}).`;
 
   memoryRecallOptionsEl.innerHTML = "";
-  const answers = [...memoryState.sequence];
-  answers.forEach((value) => {
+  memoryState.recallOptionsPool.forEach((value) => {
     const btn = document.createElement("button");
     btn.className = "option-btn";
     btn.textContent = String(value);
@@ -290,15 +328,33 @@ function handleRecallClick(value, btn) {
     btn.classList.add("is-selected");
     memoryState.recallIndex += 1;
     if (memoryState.recallIndex >= memoryState.sequence.length) {
-      memoryRecallFeedback.textContent = "✓";
+      const blockSucceeded = !memoryState.recallHadError;
+      if (blockSucceeded) {
+        memoryState.consecutiveSuccesses += 1;
+        memoryState.consecutiveFailures = 0;
+      } else {
+        memoryState.consecutiveFailures += 1;
+        memoryState.consecutiveSuccesses = 0;
+      }
+
+      if (memoryState.consecutiveSuccesses >= 2) {
+        memoryState.level += 1;
+        memoryState.consecutiveSuccesses = 0;
+        memoryState.consecutiveFailures = 0;
+      } else if (memoryState.consecutiveFailures >= 2) {
+        if (memoryState.level > 3) memoryState.level -= 1;
+        memoryState.consecutiveFailures = 0;
+        memoryState.consecutiveSuccesses = 0;
+      }
+
+      memoryRecallFeedback.textContent = blockSucceeded ? "✓" : "✓（本轮有错）";
       memoryRecallFeedback.style.color = "#16a34a";
       memoryRecallFeedback.style.fontSize = "2rem";
       memoryRecallFeedback.style.fontWeight = "700";
-      memoryState.consecutiveFailures = 0;
-      memoryState.level += 1;
       window.setTimeout(startMemoryBlock, 800);
     }
   } else {
+    memoryState.recallHadError = true;
     memoryRecallFeedback.textContent = "✗ 再试一次";
     memoryRecallFeedback.style.color = "#dc2626";
     memoryRecallFeedback.style.fontSize = "2rem";
