@@ -136,10 +136,15 @@ function handleFluencySubmit() {
     fluencyState.wrongStreak = 0;
     fluencyFeedback.textContent = "✓";
     fluencyFeedback.style.color = "#16a34a";
+    fluencyStats.textContent = `Problems answered: ${fluencyState.total}, correct: ${fluencyState.correct}.`;
+    nextFluencyProblem();
   } else {
     fluencyState.wrongStreak += 1;
     fluencyFeedback.textContent = "✗";
     fluencyFeedback.style.color = "#dc2626";
+    fluencyStats.textContent = `Problems answered: ${fluencyState.total}, correct: ${fluencyState.correct}.`;
+    fluencyAnswerInput.value = "";
+    fluencyAnswerInput.focus();
   }
 
   if (fluencyState.wrongStreak >= 3) {
@@ -150,8 +155,6 @@ function handleFluencySubmit() {
     attentionFeedback.textContent = "";
   }
 
-  fluencyStats.textContent = `Problems answered: ${fluencyState.total}, correct: ${fluencyState.correct}.`;
-  nextFluencyProblem();
 }
 
 function uniqueProductsForLevel(level) {
@@ -244,6 +247,14 @@ function handleMemoryAnswer(chosen) {
   if (chosen === correct) {
     memoryFeedback.textContent = `✓ ${correct}`;
     memoryFeedback.style.color = "#16a34a";
+    memoryState.sequence.push(correct);
+    memoryState.currentIndex += 1;
+
+    if (memoryState.currentIndex >= memoryState.questionsInBlock) {
+      startRecallPhase();
+    } else {
+      showCurrentMemoryQuestion();
+    }
   } else {
     memoryFeedback.textContent = `✗ ${chosen} → ${correct}`;
     memoryFeedback.style.color = "#dc2626";
@@ -251,15 +262,6 @@ function handleMemoryAnswer(chosen) {
 
   memoryFeedback.style.fontSize = "1.6rem";
   memoryFeedback.style.fontWeight = "700";
-
-  memoryState.sequence.push(correct);
-  memoryState.currentIndex += 1;
-
-  if (memoryState.currentIndex >= memoryState.questionsInBlock) {
-    startRecallPhase();
-  } else {
-    showCurrentMemoryQuestion();
-  }
 }
 
 function startRecallPhase() {
@@ -297,16 +299,10 @@ function handleRecallClick(value, btn) {
       window.setTimeout(startMemoryBlock, 800);
     }
   } else {
-    memoryState.consecutiveFailures += 1;
-    memoryRecallFeedback.textContent = "✗";
+    memoryRecallFeedback.textContent = "✗ 再试一次";
     memoryRecallFeedback.style.color = "#dc2626";
     memoryRecallFeedback.style.fontSize = "2rem";
     memoryRecallFeedback.style.fontWeight = "700";
-    if (memoryState.consecutiveFailures >= 2 && memoryState.level > 3) {
-      memoryState.level -= 1;
-      memoryState.consecutiveFailures = 0;
-    }
-    window.setTimeout(startMemoryBlock, 900);
   }
 }
 
@@ -365,4 +361,3 @@ restartButton.addEventListener("click", () => {
 
 // Run once when the script loads
 simplifyTestUI();
-
