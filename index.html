@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Math Fluency + Memory Trainer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell" id="app">
+      <!-- Welcome screen -->
+      <section class="screen is-visible" id="screen-welcome">
+        <header class="screen-header">
+          <h1 class="title">Math Fluency + Memory</h1>
+          <p class="subtitle">Please enter name and ID, then press "Start".</p>
+        </header>
+
+        <div class="card">
+          <div class="field">
+            <label class="label" for="student-name">Name</label>
+            <input id="student-name" class="input" type="text" maxlength="32" />
+          </div>
+          <div class="field">
+            <label class="label" for="student-id">ID</label>
+            <input id="student-id" class="input" type="text" maxlength="32" />
+          </div>
+          <button id="btn-start" class="btn primary wide">Start</button>
+        </div>
+
+        <p class="note">
+          This training has two parts: <strong>9×9 multiplication fluency (20 seconds)</strong> and
+          <strong>9×9 working-memory practice (5 minutes)</strong>.
+        </p>
+      </section>
+
+      <!-- Task 1: 9x9 fluency -->
+      <section class="screen" id="screen-fluency">
+        <header class="screen-header row">
+          <div>
+            <h2 class="title-sm">Part 1: 9×9 multiplication</h2>
+            <p class="subtitle">
+              One problem at a time. Practice for <strong>20 seconds</strong>.
+            </p>
+          </div>
+          <div class="timer-box">
+            <span class="label">Time left</span>
+            <span id="timer-fluency" class="timer-value">00:20</span>
+          </div>
+        </header>
+
+        <div class="card center">
+          <div id="fluency-problem" class="problem"></div>
+          <div class="answer-row">
+            <input
+              id="fluency-answer"
+              class="input answer-input"
+              type="number"
+              inputmode="numeric"
+            />
+            <button id="btn-fluency-submit" class="btn primary">Submit</button>
+          </div>
+          <p id="fluency-feedback" class="feedback"></p>
+          <p id="attention-feedback" class="attention-feedback"></p>
+          <p id="fluency-stats" class="stats"></p>
+        </div>
+      </section>
+
+      <!-- Task 2: 9x9 working memory -->
+      <section class="screen" id="screen-memory">
+        <header class="screen-header row">
+          <div>
+            <h2 class="title-sm">Part 2: 9×9 working memory</h2>
+            <p class="subtitle">
+              First choose answers for each problem, then recall them in order. Practice for <strong>5 minutes</strong>.
+            </p>
+          </div>
+          <div class="timer-box">
+            <span class="label">Time left</span>
+            <span id="timer-memory" class="timer-value">05:00</span>
+          </div>
+        </header>
+
+        <div class="card" id="memory-question-phase">
+          <p id="memory-level-label" class="note">
+            Current level: <span id="memory-level-number">3</span> problems
+          </p>
+
+          <div id="memory-question" class="problem"></div>
+          <div id="memory-options" class="options-row"></div>
+          <p id="memory-feedback" class="feedback"></p>
+          <p class="note">
+            Correct feedback: <strong>"Remember xx."</strong> · Incorrect feedback:
+            <strong>"No, xx. Remember xx."</strong>
+          </p>
+        </div>
+
+        <div class="card" id="memory-recall-phase">
+          <p id="memory-recall-instruction" class="note">
+            Please tap the answers in the same <strong>order</strong> as before.
+          </p>
+          <div id="memory-recall-options" class="options-row"></div>
+          <p id="memory-recall-feedback" class="feedback"></p>
+        </div>
+      </section>
+
+      <!-- Summary -->
+      <section class="screen" id="screen-summary">
+        <header class="screen-header">
+          <h2 class="title-sm">Session complete</h2>
+          <p class="subtitle">Thank you for practicing! You can close this page or start again.</p>
+        </header>
+
+        <div class="card">
+          <p id="summary-text"></p>
+          <button id="btn-restart" class="btn ghost">Start again</button>
+        </div>
+      </section>
+    </div>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
