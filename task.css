@@ -1,0 +1,474 @@
+/* Shared task chrome for the fraction and multiplication tasks.
+ * Layers on top of the tokens in styles.css. */
+
+.task-shell {
+  --tone: var(--frac);
+  --tone-soft: var(--frac-soft);
+  --tone-edge: rgba(124, 92, 255, 0.24);
+  --tone-light: #9b83ff;
+  max-width: 720px;
+}
+
+.task-shell.tone-mult {
+  --tone: var(--mult);
+  --tone-soft: var(--mult-soft);
+  --tone-edge: rgba(255, 62, 150, 0.24);
+  --tone-light: var(--accent);
+}
+
+/* Typed-answer tasks (multiplication). */
+
+.problem-line {
+  font-size: 2.6rem;
+  font-weight: 600;
+  margin: 0 0 18px;
+}
+
+/* Numeric answer options sit four to a row, so they run a little tighter than
+ * the two large fraction choices. */
+.choice.is-number {
+  font-size: 1.9rem;
+  min-width: 84px;
+  padding: 13px 18px;
+}
+
+.review-equation {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  padding: 10px 16px;
+  font-size: 1.4rem;
+  white-space: nowrap;
+}
+
+.review-equation .eq-answer {
+  color: var(--tone);
+  font-weight: 700;
+  margin-left: 6px;
+}
+
+.task-shell .btn.primary {
+  background: linear-gradient(135deg, var(--tone-light), var(--tone));
+  box-shadow: 0 10px 22px var(--tone-edge);
+}
+
+.task-shell .input:focus {
+  border-color: var(--tone);
+  box-shadow: 0 0 0 1px var(--tone-edge);
+}
+
+.field-row {
+  display: flex;
+  gap: 10px;
+}
+
+.field-row .field {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .field-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+select.input {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-soft) 50%),
+    linear-gradient(135deg, var(--text-soft) 50%, transparent 50%);
+  background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 28px;
+}
+
+.back-link {
+  color: var(--text-soft);
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--tone);
+}
+
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pill-flat {
+  border-radius: 999px;
+  padding: 6px 13px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--tone);
+  background: var(--tone-soft);
+  border: 1px solid var(--tone-edge);
+  white-space: nowrap;
+}
+
+.bridge-text {
+  margin: 0 0 16px;
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: var(--text-main);
+}
+
+.task-shell .subtitle {
+  font-size: 1rem;
+}
+
+/* phases */
+
+.phase {
+  display: none;
+  text-align: center;
+}
+
+.phase.is-visible {
+  display: block;
+}
+
+.phase-label {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.prompt {
+  margin: 0 0 18px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.prompt-sm {
+  margin: 0 0 16px;
+  font-size: 1.25rem;
+  line-height: 1.45;
+  color: var(--text-main);
+}
+
+/* comparison */
+
+.choice-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.choice {
+  border-radius: 20px;
+  border: 2px solid rgba(148, 163, 184, 0.45);
+  background: #fff;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 2.4rem;
+  line-height: 1;
+  padding: 16px 24px;
+  min-width: 104px;
+  cursor: pointer;
+  transition: transform 0.12s ease-out, border-color 0.12s ease-out,
+    background 0.12s ease-out, box-shadow 0.12s ease-out;
+}
+
+.choice .frac {
+  font-size: 1em;
+}
+
+.choice:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--tone);
+  background: var(--tone-soft);
+  box-shadow: 0 12px 24px var(--tone-edge);
+}
+
+.choice:disabled {
+  cursor: default;
+}
+
+/* Scored sets: acknowledges the tap without signalling right or wrong. */
+.choice.is-picked {
+  border-color: var(--tone);
+  background: var(--tone-soft);
+  color: var(--tone);
+}
+
+/* Practice only. */
+.choice.is-correct {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.choice.is-wrong {
+  border-color: var(--no);
+  background: var(--no-soft);
+  color: var(--no);
+}
+
+.choice.is-answer {
+  border-color: var(--ok);
+  box-shadow: 0 0 0 3px var(--ok-soft);
+}
+
+.choice-vs {
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.feedback.is-ok {
+  color: var(--ok);
+  font-weight: 700;
+  font-size: 1.35rem;
+}
+
+.feedback.is-no {
+  color: var(--no);
+  font-weight: 700;
+  font-size: 1.35rem;
+}
+
+#setup-error.feedback.is-no {
+  font-size: 0.9rem;
+}
+
+.feedback.is-hold {
+  color: var(--tone);
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin-top: 14px;
+}
+
+.guidance {
+  margin: 4px auto 14px;
+  max-width: 44ch;
+  font-size: 1.6rem;
+  line-height: 1.5;
+  color: var(--text-main);
+  background: var(--tone-soft);
+  border: 1px solid var(--tone-edge);
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+
+#recall-guidance.guidance {
+  font-size: 1.25rem;
+}
+
+.hold-line {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.8em;
+  color: var(--tone);
+  font-weight: 700;
+}
+
+/* recall */
+
+.slots {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.slot {
+  width: 60px;
+  height: 58px;
+  border-radius: 16px;
+  border: 2px dashed rgba(148, 163, 184, 0.55);
+  display: grid;
+  place-items: center;
+  font-size: 0.9rem;
+  color: var(--ink-faint);
+}
+
+.slot.is-filled {
+  border-style: solid;
+  border-color: var(--tone);
+  background: var(--tone-soft);
+  color: var(--tone);
+  font-size: 1.5rem;
+}
+
+.recall-options {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.recall-option {
+  border-radius: 16px;
+  border: 2px solid rgba(148, 163, 184, 0.45);
+  background: #fff;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 10px 16px;
+  min-width: 62px;
+  cursor: pointer;
+  transition: transform 0.12s ease-out, border-color 0.12s ease-out,
+    background 0.12s ease-out;
+}
+
+.recall-option .frac {
+  font-size: 1em;
+}
+
+.recall-option:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--tone);
+  background: var(--tone-soft);
+}
+
+.recall-option:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.btn.small {
+  padding: 5px 14px;
+  font-size: 0.82rem;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* review */
+
+.review-grid {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.review-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  padding: 10px 16px;
+  font-size: 1.5rem;
+}
+
+.review-frac {
+  color: var(--text-main);
+}
+
+.review-symbol {
+  color: var(--tone);
+  font-weight: 700;
+  font-size: 1.15em;
+}
+
+.review-bar {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.22);
+  overflow: hidden;
+}
+
+.review-bar span {
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+  background: var(--tone);
+  transform-origin: left center;
+  animation: review-countdown 3.6s linear forwards;
+}
+
+@keyframes review-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .review-bar span {
+    animation: none;
+  }
+}
+
+/* summary */
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 520px) {
+  .stat-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-k {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.stat-v {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--tone);
+}
+
+.flag {
+  margin: 10px 0 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--accent-attention);
+  background: rgba(249, 115, 22, 0.08);
+  border-left: 4px solid var(--accent-attention);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
