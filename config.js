@@ -10,5 +10,5 @@
  */
 
 const UPLOAD_URL =
-  "https://script.google.com/macros/s/AKfycbzLBjNI-aKjqdtmt0e6s3NAMJ3ER6TL3FsyNexxQJN3I6CWpBzL7dNK5U9ahHYhQ6ff/exec";
+  "https://script.google.com/macros/s/AKfycbwO1mCxM9Cm4ci9F7B5-vytYxmFv1-jrPCwfYP-YIwq_8wyaWGILjelRDCHXQUti9j4/exec";
 const UPLOAD_TOKEN = "math-fluency-2026";

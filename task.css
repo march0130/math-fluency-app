@@ -16,6 +16,13 @@
   --tone-light: var(--accent);
 }
 
+.task-shell.tone-line {
+  --tone: var(--line-tone);
+  --tone-soft: rgba(8, 145, 178, 0.09);
+  --tone-edge: rgba(8, 145, 178, 0.24);
+  --tone-light: #22b8d6;
+}
+
 /* Typed-answer tasks (multiplication). */
 
 .problem-line {
@@ -471,6 +478,130 @@ select.input {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 14px;
+}
+
+.stat-row--two {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.stat-d {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text-soft);
+}
+
+/* number line */
+
+.nl-card {
+  text-align: center;
+}
+
+.nl-fraction {
+  margin: 4px 0 6px;
+  font-size: 3rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.nl-fraction .frac {
+  font-size: 1em;
+}
+
+.nl {
+  position: relative;
+  margin: 0 auto 18px;
+  max-width: 620px;
+  padding: 30px 30px 4px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  border-radius: 16px;
+  outline: none;
+}
+
+.nl:focus-visible {
+  box-shadow: 0 0 0 3px var(--tone-edge);
+}
+
+.nl-track {
+  position: relative;
+  height: 44px;
+}
+
+.nl-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--text-main);
+  transform: translateY(-50%);
+}
+
+.nl-tick {
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 28px;
+  border-radius: 2px;
+  background: var(--text-main);
+  transform: translate(-50%, -50%);
+}
+
+.nl-tick--start {
+  left: 0;
+}
+
+.nl-tick--end {
+  left: 100%;
+}
+
+.nl-mark {
+  position: absolute;
+  top: -14px;
+  width: 4px;
+  height: 58px;
+  border-radius: 2px;
+  background: var(--tone);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.nl-mark::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--tone);
+  box-shadow: 0 4px 10px var(--tone-edge);
+  transform: translateX(-50%);
+}
+
+.nl-labels {
+  position: relative;
+  height: 30px;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.nl-labels span {
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+}
+
+.nl-labels span:first-child {
+  left: 0;
+}
+
+.nl-labels span:last-child {
+  left: 100%;
 }
 
 .upload-status {

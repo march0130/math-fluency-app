@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Number Line Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./task.css" />
+  </head>
+  <body>
+    <div class="app-shell task-shell tone-line">
+      <!-- Setup -->
+      <section class="screen is-visible" id="screen-setup">
+        <header class="screen-header">
+          <h1 class="title">Number Line Test</h1>
+          <p class="subtitle">Show where each fraction goes on the number line.</p>
+        </header>
+
+        <div class="card">
+          <div class="field-row">
+            <div class="field">
+              <label class="label" for="student-id">Student ID</label>
+              <input id="student-id" class="input" type="text" maxlength="32" />
+            </div>
+            <div class="field">
+              <label class="label" for="test-point">Test</label>
+              <select id="test-point" class="input">
+                <option value="pre">Pretest</option>
+                <option value="post">Posttest</option>
+              </select>
+            </div>
+          </div>
+
+          <p id="setup-error" class="feedback is-no"></p>
+          <button id="btn-start" class="btn primary wide">Start</button>
+        </div>
+
+        <p class="upload-status" id="pending-note"></p>
+        <p class="note"><a class="back-link" href="./test.html">← Back to the tests</a></p>
+      </section>
+
+      <!-- Between blocks -->
+      <section class="screen" id="screen-bridge">
+        <header class="screen-header">
+          <h2 class="title-sm" id="bridge-title"></h2>
+        </header>
+        <div class="card">
+          <p id="bridge-text" class="bridge-text"></p>
+          <button id="btn-bridge" class="btn primary wide"></button>
+        </div>
+      </section>
+
+      <!-- Items -->
+      <section class="screen" id="screen-item">
+        <header class="screen-header row">
+          <div>
+            <h2 class="title-sm" id="item-label"></h2>
+            <p class="subtitle">Tap the line where the fraction goes. Tap again to move your mark.</p>
+          </div>
+          <div class="header-meta">
+            <span class="pill-flat" id="item-progress"></span>
+          </div>
+        </header>
+
+        <div class="card nl-card">
+          <p class="nl-fraction" id="nl-fraction"></p>
+
+          <div class="nl" id="nl" tabindex="0" role="slider" aria-label="Number line"
+               aria-valuemin="0" aria-valuemax="1">
+            <div class="nl-track" id="nl-track">
+              <div class="nl-line"></div>
+              <div class="nl-tick nl-tick--start"></div>
+              <div class="nl-tick nl-tick--end"></div>
+              <div class="nl-mark" id="nl-mark" hidden></div>
+            </div>
+            <div class="nl-labels">
+              <span>0</span>
+              <span id="nl-max">1</span>
+            </div>
+          </div>
+
+          <button class="btn primary" id="btn-next" disabled>Next</button>
+        </div>
+      </section>
+
+      <!-- Summary -->
+      <section class="screen" id="screen-summary">
+        <header class="screen-header">
+          <h2 class="title-sm">All done</h2>
+          <p class="subtitle">Thank you!</p>
+        </header>
+
+        <div class="stat-row">
+          <div class="card stat">
+            <p class="stat-k">0–1 line · error</p>
+            <p class="stat-v" id="summary-pae-01">—</p>
+          </div>
+          <div class="card stat">
+            <p class="stat-k">0–2 line · error</p>
+            <p class="stat-v" id="summary-pae-02">—</p>
+          </div>
+          <div class="card stat">
+            <p class="stat-k">Overall · error</p>
+            <p class="stat-v" id="summary-pae-all">—</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <p class="note" id="summary-meta"></p>
+          <p class="note">
+            Error is the percent absolute error: how far each mark was from the true position, as a
+            share of the line's length. Lower is better.
+          </p>
+          <p class="upload-status" id="upload-status"></p>
+          <div class="button-row">
+            <button id="btn-csv" class="btn primary">Download CSV</button>
+            <button id="btn-restart" class="btn ghost">Next student</button>
+          </div>
+        </div>
+
+        <p class="note"><a class="back-link" href="./test.html">← Back to the tests</a></p>
+      </section>
+    </div>
+
+    <script src="./config.js"></script>
+    <script src="./common.js"></script>
+    <script src="./test-bank.js"></script>
+    <script src="./numberline.js"></script>
+  </body>
+</html>

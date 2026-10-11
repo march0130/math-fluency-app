@@ -65,6 +65,95 @@
   --tone-edge: rgba(124, 92, 255, 0.3);
 }
 
+.tile--line {
+  --tone: var(--line-tone);
+  --tone-edge: rgba(8, 145, 178, 0.3);
+}
+
+/* The test entry is for the researcher, not the student, so it sits below the
+ * two training tiles as a quieter full-width bar. */
+.tile--test {
+  --tone: var(--text-main);
+  --tone-edge: rgba(31, 41, 51, 0.18);
+}
+
+.tile--wide {
+  grid-column: 1 / -1;
+  min-height: 0;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 18px 26px;
+}
+
+.tile--wide .tile-name {
+  font-size: 1.1rem;
+}
+
+.tile-art--line {
+  width: 70%;
+  height: 2.5rem;
+}
+
+.mini-line {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--text-main);
+}
+
+.mini-line::before,
+.mini-line::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--text-main);
+  transform: translateY(-50%);
+}
+
+.mini-line::before {
+  left: 0;
+}
+
+.mini-line::after {
+  right: 0;
+}
+
+.mini-mark {
+  position: absolute;
+  left: 62%;
+  top: -22px;
+  width: 4px;
+  height: 26px;
+  border-radius: 2px;
+  background: var(--tone);
+}
+
+.mini-mark::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--tone);
+  transform: translateX(-50%);
+}
+
+.tile-frac {
+  font-size: 0.85em;
+}
+
+.home-back {
+  margin: 22px 0 0;
+  font-size: 0.9rem;
+}
+
 .tile:hover,
 .tile:focus-visible {
   transform: translateY(-3px);

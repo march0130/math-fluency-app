@@ -78,29 +78,10 @@ const btnCsvAll = document.getElementById("btn-csv-all");
 const btnRestart = document.getElementById("btn-restart");
 
 /* ---------- deterministic item stream ---------- */
-
-function mulberry32(a) {
-  return function () {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+/* mulberry32 and shuffle live in common.js. */
 
 function itemKey(item) {
   return item.a + "x" + item.b;
-}
-
-function shuffleInPlace(list, rng) {
-  for (let i = list.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(rng() * (i + 1));
-    const tmp = list[i];
-    list[i] = list[j];
-    list[j] = tmp;
-  }
-  return list;
 }
 
 /* Distractors are the near misses students actually make: a factor off by one,
@@ -121,7 +102,7 @@ function answerOptions(a, b, product, rng) {
   const seen = {};
   seen[product] = true;
   const distractors = [];
-  shuffleInPlace(candidates, rng).forEach(function (value) {
+  shuffle(candidates, rng).forEach(function (value) {
     if (value > 0 && !seen[value]) {
       seen[value] = true;
       distractors.push(value);
@@ -140,7 +121,7 @@ function answerOptions(a, b, product, rng) {
   }
 
   const options = [product].concat(distractors.slice(0, OPTION_COUNT - 1));
-  return shuffleInPlace(options, rng);
+  return shuffle(options, rng);
 }
 
 /* Problems are seeded from the lesson number, so every student in a lesson
@@ -521,45 +502,12 @@ function recallTargets() {
   });
 }
 
-/* The pool always holds every answer the student has to reproduce, plus one
- * other option per problem. Built the same way whether the answers were right
- * or wrong, so its contents give nothing away. */
-function buildRecallOptions(targets) {
-  const seen = {};
-  const options = [];
-
-  function add(value) {
-    if (!seen[value]) {
-      seen[value] = true;
-      options.push(value);
-    }
-  }
-
-  targets.forEach(add);
-  session.trial.items.forEach(function (item, i) {
-    for (let j = 0; j < item.options.length; j += 1) {
-      if (item.options[j] !== targets[i]) {
-        add(item.options[j]);
-        break;
-      }
-    }
-  });
-
-  for (let i = options.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const tmp = options[i];
-    options[i] = options[j];
-    options[j] = tmp;
-  }
-  return options;
-}
-
 function renderRecall() {
   const targets = recallTargets();
   session.recall = {
     targets: targets,
     entered: [],
-    options: buildRecallOptions(targets),
+    options: numberRecallPool(targets),
   };
 
   showPhase("recall");
@@ -684,12 +632,14 @@ function recordTrial(sequenceCorrect) {
    * wrongly but reproduced their own answers in order still advances. */
   if (session.practice || !isWm()) return;
 
-  const size = session.trial.items.length;
   if (sequenceCorrect) {
-    session.highestSpan = Math.max(session.highestSpan, size);
     session.consecutiveCorrect += 1;
     session.consecutiveWrong = 0;
     if (session.consecutiveCorrect >= SPAN_STEP_UP_AFTER) {
+      /* The highest span is the highest one passed, i.e. stepped up out of.
+       * Reaching a span, or getting a sequence right there before falling
+       * back, does not count. */
+      session.highestSpan = Math.max(session.highestSpan, session.span);
       session.span += 1;
       session.consecutiveCorrect = 0;
     }
@@ -813,9 +763,13 @@ function saveSession(accuracy) {
 }
 
 /* ---------- upload ---------- */
+/* postPayload and the retry queue live in common.js. */
 
-const PENDING_KEY = "multiplicationTask.pending";
-const UPLOAD_TIMEOUT_MS = 10000;
+const uploader = createUploader(
+  "multiplicationTask.pending",
+  uploadStatus,
+  pendingNote
+);
 
 function sessionPayload(record) {
   return {
@@ -831,131 +785,8 @@ function sessionPayload(record) {
   };
 }
 
-/* text/plain keeps this a simple request, so the browser skips the CORS
- * preflight that Apps Script cannot answer. The timeout matters more than it
- * looks: on a flaky school network a bare fetch can hang for a minute with a
- * child sitting in front of it. */
-function postPayload(payload) {
-  const controller = new AbortController();
-  const timer = setTimeout(function () {
-    controller.abort();
-  }, UPLOAD_TIMEOUT_MS);
-
-  return fetch(UPLOAD_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify(payload),
-    signal: controller.signal,
-  })
-    .then(function (response) {
-      if (!response.ok) throw new Error("HTTP " + response.status);
-      return response.json();
-    })
-    .then(function (result) {
-      if (!result || result.ok !== true) {
-        throw new Error((result && result.error) || "rejected");
-      }
-      return result;
-    })
-    .finally(function () {
-      clearTimeout(timer);
-    });
-}
-
-function readPending() {
-  try {
-    return JSON.parse(localStorage.getItem(PENDING_KEY) || "[]");
-  } catch (err) {
-    return [];
-  }
-}
-
-function writePending(list) {
-  try {
-    localStorage.setItem(PENDING_KEY, JSON.stringify(list));
-  } catch (err) {
-    /* storage unavailable; the downloaded CSV is the fallback */
-  }
-}
-
-/* Sessions recorded offline wait here and go up the next time this page is
- * opened with a working connection. */
-function flushPending(onDone) {
-  const list = readPending();
-  if (!UPLOAD_URL || list.length === 0) {
-    if (onDone) onDone(0, list.length);
-    return;
-  }
-
-  let sent = 0;
-  function step() {
-    if (sent >= list.length) {
-      writePending([]);
-      if (onDone) onDone(sent, 0);
-      return;
-    }
-    postPayload(list[sent]).then(
-      function () {
-        sent += 1;
-        step();
-      },
-      function () {
-        writePending(list.slice(sent));
-        if (onDone) onDone(sent, list.length - sent);
-      }
-    );
-  }
-  step();
-}
-
-function showPendingNote() {
-  const waiting = readPending().length;
-  if (!waiting) {
-    pendingNote.textContent = "";
-    pendingNote.className = "upload-status";
-    return;
-  }
-  pendingNote.textContent =
-    waiting +
-    (waiting === 1 ? " session is" : " sessions are") +
-    " waiting to upload. Connect to the internet and reopen this page.";
-  pendingNote.className = "upload-status is-warn";
-}
-
 function uploadSession(accuracy) {
-  const record = sessionRecord(accuracy);
-
-  if (!UPLOAD_URL) {
-    uploadStatus.textContent =
-      "Saved in this browser only. Download the CSV before closing.";
-    uploadStatus.className = "upload-status is-warn";
-    return;
-  }
-
-  uploadStatus.textContent = "Uploading…";
-  uploadStatus.className = "upload-status";
-
-  postPayload(sessionPayload(record)).then(
-    function () {
-      uploadStatus.textContent = "✓ Uploaded to the research spreadsheet.";
-      uploadStatus.className = "upload-status is-ok";
-      flushPending();
-    },
-    function (err) {
-      /* Queue for a later attempt and hand over a file now, so the session
-       * survives both a dead network and a wiped browser profile. */
-      const list = readPending();
-      list.push(sessionPayload(record));
-      writePending(list);
-      uploadStatus.textContent =
-        "No connection (" +
-        (err.name === "AbortError" ? "timed out" : err.message) +
-        "). Saved on this device and downloaded as CSV — it will upload next " +
-        "time this page is opened online.";
-      uploadStatus.className = "upload-status is-warn";
-      downloadThisSession();
-    }
-  );
+  uploader.send(sessionPayload(sessionRecord(accuracy)), downloadThisSession);
 }
 
 /* One row per problem, practice included, so every item and every sequence is
@@ -982,11 +813,6 @@ const CSV_HEADER = [
   "trial_accuracy",
   "highest_span",
 ];
-
-function csvCell(value) {
-  const text = value === null || value === undefined ? "" : String(value);
-  return /[",\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
-}
 
 function recordToRows(record) {
   const rows = [];
@@ -1037,31 +863,15 @@ function toCsv(records) {
       rows.push(row);
     });
   });
-  return rows
-    .map(function (row) {
-      return row.map(csvCell).join(",");
-    })
-    .join("\n");
-}
-
-function download(filename, text) {
-  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  return rowsToCsv(rows);
 }
 
 function stamp() {
-  return session.startedAt.toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  return fileStamp(session.startedAt);
 }
 
 function downloadThisSession() {
-  download(
+  downloadText(
     "multiplication-" +
       session.id +
       "-lesson" +
@@ -1086,7 +896,7 @@ function downloadAllSessions() {
     downloadThisSession();
     return;
   }
-  download("multiplication-all-sessions-" + stamp() + ".csv", toCsv(saved));
+  downloadText("multiplication-all-sessions-" + stamp() + ".csv", toCsv(saved));
 }
 
 /* ---------- wiring ---------- */
@@ -1108,5 +918,5 @@ btnRestart.addEventListener("click", function () {
 });
 
 updateSetupHint();
-showPendingNote();
-flushPending(showPendingNote);
+uploader.showPending();
+uploader.flush(uploader.showPending);

@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Test Items</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      body {
+        display: block;
+        padding: 28px 20px 48px;
+        color: var(--text-main);
+      }
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 1.9rem;
+      }
+      h2 {
+        margin: 34px 0 6px;
+        font-size: 1.35rem;
+      }
+      .lede {
+        margin: 0 0 6px;
+        color: var(--text-soft);
+        font-size: 0.92rem;
+        line-height: 1.5;
+        max-width: 72ch;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--surface);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 10px 26px rgba(22, 10, 56, 0.1);
+        margin-top: 10px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: middle;
+        font-size: 0.95rem;
+      }
+      th {
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+        background: rgba(148, 163, 184, 0.08);
+      }
+      tr.practice td {
+        background: rgba(148, 163, 184, 0.07);
+        color: var(--text-soft);
+      }
+      .items {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 14px;
+      }
+      .item {
+        white-space: nowrap;
+      }
+      .item .frac {
+        font-size: 0.95em;
+      }
+      .tag {
+        display: inline-block;
+        margin-left: 3px;
+        padding: 0 6px;
+        border-radius: 6px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        vertical-align: middle;
+      }
+      .t-E { background: rgba(22, 163, 74, 0.12); color: #15803d; }
+      .t-M { background: rgba(234, 179, 8, 0.16); color: #a16207; }
+      .t-H { background: rgba(220, 38, 38, 0.1); color: #b91c1c; }
+      .sym {
+        color: var(--frac);
+        font-weight: 700;
+        padding: 0 3px;
+      }
+      .opts {
+        color: var(--ink-faint);
+        font-size: 0.78rem;
+      }
+      .legend {
+        margin-top: 8px;
+        font-size: 0.82rem;
+        color: var(--text-soft);
+      }
+      .nl-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .nl-item {
+        background: var(--surface);
+        border-radius: 12px;
+        padding: 8px 12px;
+        box-shadow: 0 6px 16px rgba(22, 10, 56, 0.08);
+        text-align: center;
+        min-width: 70px;
+      }
+      .nl-item .frac {
+        font-size: 1.3rem;
+      }
+      .nl-item small {
+        display: block;
+        margin-top: 4px;
+        color: var(--ink-faint);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Pre / Post Test Items</h1>
+      <p class="lede">
+        The fixed bank from <code>test-bank.js</code>, the same at pretest and posttest. The memory
+        test is adaptive: everyone starts at span 2 and moves up after a run of correct recalls.
+        The set a student meets at a span is always the next one listed for that span, so
+        students at the same level see the same items. Practice rows give feedback and are not
+        scored.
+      </p>
+
+      <h2>Memory · Part 1 · Multiplication</h2>
+      <p class="lede">
+        Up a span after 3 correct recalls in a row; stops after 3 incorrect in a row. Up to 8 sets
+        per span. Every set at a span has the same easy / medium / hard mix.
+      </p>
+      <table id="mult"></table>
+      <p class="legend">
+        <span class="tag t-E">E</span> easy, product ≤ 20 ·
+        <span class="tag t-M">M</span> medium, 21–40 ·
+        <span class="tag t-H">H</span> hard, &gt; 40. Grey numbers are the four answer choices, in
+        the order shown.
+      </p>
+
+      <h2>Memory · Part 2 · Fraction comparison</h2>
+      <p class="lede">
+        Up a span after 2 correct recalls in a row; stops after 2 incorrect in a row. Up to 6 sets
+        per span. The answer is the larger fraction; the symbol shows the correct comparison as the
+        pair is laid out.
+      </p>
+      <table id="frac"></table>
+      <p class="legend">
+        <span class="tag t-E">E</span> same denominator up to sixths, or unit fractions up to eighths ·
+        <span class="tag t-M">M</span> larger denominators, non-unit numerators, or compared with ½
+        up to sixths · <span class="tag t-H">H</span> compared with ½, eighths and above.
+      </p>
+
+      <h2>Number line</h2>
+      <p class="lede">Shown in this order. Only the endpoints are labelled.</p>
+      <div id="nl"></div>
+    </main>
+
+    <script src="./config.js"></script>
+    <script src="./common.js"></script>
+    <script src="./test-bank.js"></script>
+    <script>
+      function parse(text) {
+        const p = text.split("/");
+        return { n: Number(p[0]), d: Number(p[1]) };
+      }
+
+      function multTier(a, b) {
+        const p = a * b;
+        return p <= 20 ? "E" : p <= 40 ? "M" : "H";
+      }
+
+      function fracTier(type, left, right) {
+        const larger = fracValue(left) > fracValue(right) ? left : right;
+        const smaller = larger === left ? right : left;
+        if (type === "vsHalf") return larger.d >= 8 ? "H" : "M";
+        if (type === "sameDen") return larger.d <= 6 ? "E" : "M";
+        return larger.n === 1 && smaller.d <= 8 ? "E" : "M";
+      }
+
+      function tag(t) {
+        return '<span class="tag t-' + t + '">' + t + "</span>";
+      }
+
+      function multRow(label, span, items, practice) {
+        return (
+          '<tr class="' + (practice ? "practice" : "") + '"><td>' + label + "</td><td>" + span +
+          '</td><td><div class="items">' +
+          items
+            .map(function (x) {
+              return (
+                '<span class="item">' + x[0] + " × " + x[1] + " = <strong>" + x[0] * x[1] +
+                "</strong>" + tag(multTier(x[0], x[1])) + ' <span class="opts">(' +
+                x[2].join(", ") + ")</span></span>"
+              );
+            })
+            .join("") +
+          "</div></td></tr>"
+        );
+      }
+
+      function fracRow(label, span, items, practice) {
+        const typeName = { sameDen: "same denominator", sameNum: "same numerator", vsHalf: "vs ½" };
+        return (
+          '<tr class="' + (practice ? "practice" : "") + '"><td>' + label + "</td><td>" + span +
+          '</td><td><div class="items">' +
+          items
+            .map(function (raw) {
+              const l = parse(raw[1]);
+              const r = parse(raw[2]);
+              const sym = fracValue(l) > fracValue(r) ? "&gt;" : "&lt;";
+              return (
+                '<span class="item" title="' + typeName[raw[0]] + '">' + fracHtml(l) +
+                '<span class="sym">' + sym + "</span>" + fracHtml(r) + tag(fracTier(raw[0], l, r)) +
+                "</span>"
+              );
+            })
+            .join("") +
+          "</div></td></tr>"
+        );
+      }
+
+      const head = "<tr><th>Set</th><th>Span</th><th>Items, in order</th></tr>";
+
+      /* one row per set, labelled span-set, grouped by span */
+      function levelRows(levels, rowFn) {
+        return levels
+          .map(function (lvl) {
+            return lvl.sets
+              .map(function (items, i) {
+                return rowFn(lvl.span + "–" + (i + 1), lvl.span, items, false);
+              })
+              .join("");
+          })
+          .join("");
+      }
+
+      const m = TEST_BANK.multiplication;
+      document.getElementById("mult").innerHTML =
+        head +
+        m.practice.map(function (s, i) { return multRow("Practice " + (i + 1), s.length, s, true); }).join("") +
+        levelRows(m.levels, multRow);
+
+      const f = TEST_BANK.fraction;
+      document.getElementById("frac").innerHTML =
+        head +
+        f.practice.map(function (s, i) { return fracRow("Practice " + (i + 1), s.length, s, true); }).join("") +
+        levelRows(f.levels, fracRow);
+
+      document.getElementById("nl").innerHTML = TEST_BANK.numberLine
+        .map(function (block) {
+          return (
+            '<p class="lede"><strong>0 to ' + block.max + "</strong></p>" +
+            '<div class="nl-list">' +
+            block.items
+              .map(function (text, i) {
+                const v = fracValue(parse(text));
+                return (
+                  '<div class="nl-item">' + fracHtml(parse(text)) + "<small>#" + (i + 1) + " · " +
+                  v.toFixed(2) + "</small></div>"
+                );
+              })
+              .join("") +
+            "</div>"
+          );
+        })
+        .join("");
+    </script>
+  </body>
+</html>

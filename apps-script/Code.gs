@@ -31,11 +31,19 @@ function doPost(e) {
     }
 
     const payload = JSON.parse(e.postData.contents);
-    if (payload.token !== TOKEN) {
+    /* The pre/post test pages sign with TOKEN + '/tests' so that an older
+     * deployment of this script, which knew only TOKEN, refuses them. */
+    if (payload.token !== TOKEN && payload.token !== TOKEN + '/tests') {
       return reply({ ok: false, error: 'bad token' });
     }
 
-    const task = payload.task === 'multiplication' ? 'multiplication' : 'fraction';
+    /* One sheet per task. Anything not on this list is refused rather than
+     * creating a stray sheet. */
+    const TASKS = ['fraction', 'multiplication', 'memory-test', 'number-line'];
+    const task = payload.task;
+    if (TASKS.indexOf(task) === -1) {
+      return reply({ ok: false, error: 'unknown task' });
+    }
     const rows = payload.rows || [];
     if (!rows.length) {
       return reply({ ok: false, error: 'no rows' });
@@ -73,7 +81,7 @@ function doPost(e) {
 /* A browser opening the /exec URL directly gets something readable, which makes
  * it easy to confirm the deployment is live. */
 function doGet() {
-  return reply({ ok: true, service: 'math-fluency collector' });
+  return reply({ ok: true, service: 'math-fluency collector', version: 2 });
 }
 
 function getSheet(task, header) {
@@ -103,11 +111,12 @@ function sendSessionEmail(task, payload) {
   MailApp.sendEmail({
     to: EMAIL_TO,
     subject:
-      '[' + task + '] ID ' + payload.id + ' · lesson ' + payload.lesson,
+      '[' + task + '] ID ' + payload.id + ' · ' +
+      (payload.label ? payload.label : 'lesson ' + payload.lesson),
     body:
       'Task: ' + task + '\n' +
       'Student ID: ' + payload.id + '\n' +
-      'Lesson: ' + payload.lesson + '\n' +
+      (payload.label ? 'Test: ' + payload.label : 'Lesson: ' + payload.lesson) + '\n' +
       'Condition: ' + payload.condition + '\n' +
       'Started: ' + payload.startedAt + '\n' +
       'Rows: ' + (payload.rows || []).length + '\n\n' +
@@ -133,7 +142,7 @@ function sendDailyDigest() {
   const attachments = [];
   const lines = [];
 
-  ['fraction', 'multiplication'].forEach(function (task) {
+  ['fraction', 'multiplication', 'memory-test', 'number-line'].forEach(function (task) {
     const sheet = book.getSheetByName(task);
     if (!sheet || sheet.getLastRow() < 2) return;
 

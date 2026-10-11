@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Memory Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./task.css" />
+  </head>
+  <body>
+    <div class="app-shell task-shell tone-mult" id="shell">
+      <!-- Setup -->
+      <section class="screen is-visible" id="screen-setup">
+        <header class="screen-header">
+          <h1 class="title">Memory Test</h1>
+          <p class="subtitle">Multiplication first, then fraction comparison.</p>
+        </header>
+
+        <div class="card">
+          <div class="field-row">
+            <div class="field">
+              <label class="label" for="student-id">Student ID</label>
+              <input id="student-id" class="input" type="text" maxlength="32" />
+            </div>
+            <div class="field">
+              <label class="label" for="test-point">Test</label>
+              <select id="test-point" class="input">
+                <option value="pre">Pretest</option>
+                <option value="post">Posttest</option>
+              </select>
+            </div>
+          </div>
+
+          <p id="setup-error" class="feedback is-no"></p>
+          <button id="btn-start" class="btn primary wide">Start</button>
+        </div>
+
+        <p class="upload-status" id="pending-note"></p>
+        <p class="note"><a class="back-link" href="./test.html">← Back to the tests</a></p>
+      </section>
+
+      <!-- Between parts -->
+      <section class="screen" id="screen-bridge">
+        <header class="screen-header">
+          <h2 class="title-sm" id="bridge-title"></h2>
+        </header>
+        <div class="card">
+          <p id="bridge-text" class="bridge-text"></p>
+          <button id="btn-bridge" class="btn primary wide"></button>
+        </div>
+      </section>
+
+      <!-- Practice and test sets -->
+      <section class="screen" id="screen-task">
+        <header class="screen-header row">
+          <div>
+            <h2 class="title-sm" id="task-label"></h2>
+            <p class="subtitle" id="task-subtitle"></p>
+          </div>
+          <div class="header-meta">
+            <span class="pill-flat" id="span-readout"></span>
+          </div>
+        </header>
+
+        <div class="card phase" id="phase-solve">
+          <p class="phase-label" id="solve-progress"></p>
+          <p class="problem-line" id="solve-prompt"></p>
+          <div class="choice-row" id="solve-choices"></div>
+          <p class="feedback" id="solve-feedback"></p>
+          <p class="guidance" id="solve-guidance" hidden></p>
+          <button class="btn primary" id="btn-solve-next" hidden>Next</button>
+        </div>
+
+        <div class="card phase" id="phase-recall">
+          <p class="phase-label">Recall</p>
+          <p class="prompt-sm" id="recall-instruction"></p>
+          <div class="slots" id="recall-slots"></div>
+          <div class="recall-options" id="recall-options"></div>
+          <button class="btn ghost small" id="btn-recall-undo">Undo last</button>
+          <p class="guidance" id="recall-guidance" hidden></p>
+          <button class="btn primary" id="btn-recall-next" hidden>Next</button>
+        </div>
+
+        <div class="card phase" id="phase-pause">
+          <p class="prompt">Get ready…</p>
+        </div>
+      </section>
+
+      <!-- Summary -->
+      <section class="screen" id="screen-summary">
+        <header class="screen-header">
+          <h2 class="title-sm">All done</h2>
+          <p class="subtitle">Thank you!</p>
+        </header>
+
+        <div class="stat-row stat-row--two">
+          <div class="card stat">
+            <p class="stat-k">Multiplication · highest span passed</p>
+            <p class="stat-v" id="summary-mult-span">—</p>
+            <p class="stat-d" id="summary-mult-detail"></p>
+          </div>
+          <div class="card stat">
+            <p class="stat-k">Fractions · highest span passed</p>
+            <p class="stat-v" id="summary-frac-span">—</p>
+            <p class="stat-d" id="summary-frac-detail"></p>
+          </div>
+        </div>
+
+        <div class="card">
+          <p class="note" id="summary-meta"></p>
+          <p class="upload-status" id="upload-status-mult"></p>
+          <p class="upload-status" id="upload-status-frac"></p>
+          <div class="button-row">
+            <button id="btn-csv" class="btn primary">Download CSV</button>
+            <button id="btn-restart" class="btn ghost">Next student</button>
+          </div>
+        </div>
+
+        <p class="note"><a class="back-link" href="./test.html">← Back to the tests</a></p>
+      </section>
+    </div>
+
+    <script src="./config.js"></script>
+    <script src="./common.js"></script>
+    <script src="./test-bank.js"></script>
+    <script src="./memory-test.js"></script>
+  </body>
+</html>

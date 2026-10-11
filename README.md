@@ -4,17 +4,22 @@ Browser-only web app.
 
 ## Pages
 
-- **`index.html`** — home page at the site root: the two task entry points, nothing else.
-- **`fraction.html`** / `fraction.js` — the Fraction Comparison task.
-- **`multiplication.html`** / `multiplication.js` — the Multiplication task.
-- **`task.css`** — shared task chrome; **`config.js`** — the upload endpoint.
+- **`index.html`** — home page at the site root: the two training tasks and the test entry.
+- **`fraction.html`** / `fraction.js` — the Fraction Comparison training task.
+- **`multiplication.html`** / `multiplication.js` — the Multiplication training task.
+- **`test.html`** — pre/post test chooser: number line or memory.
+- **`memory-test.html`** / `memory-test.js` — memory test: multiplication, then fractions.
+- **`numberline.html`** / `numberline.js` — number line test.
+- **`test-bank.js`** — the fixed test items; **`test-items.html`** renders them for review.
+- **`common.js`** — shared helpers (recall pool, CSV, upload queue); **`task.css`** — shared
+  task styles; **`config.js`** — the upload endpoint.
 
 Students enter a **study ID only**. No names are collected anywhere, so no name ever leaves
 the device or reaches the spreadsheet. Keep the name-to-ID key offline.
 
 ## Fraction Comparison task
 
-Enter name, ID, lesson (1–15) and condition, then Start.
+Enter ID, lesson (1–15) and condition, then Start.
 
 - **Items** are seeded from the lesson number, so every student in a lesson meets the same
   pairs in the same order in both conditions. Denominators are drawn from 2, 3, 4, 5, 6, 8,
@@ -33,7 +38,7 @@ Enter name, ID, lesson (1–15) and condition, then Start.
 
 ## Multiplication task
 
-Same structure as the fraction task: name, ID, lesson (1–15) and condition.
+Same structure as the fraction task: ID, lesson (1–15) and condition.
 
 - **Items** — lessons 1–5 use the facts from 1 to 5, lessons 6–15 the full 1–9 range. Problems
   are seeded from the lesson number, so every student in a lesson meets the same problems in
@@ -54,6 +59,98 @@ against the answer the student gave, not the correct one: a student who computes
 but recalls 13 in the right position has produced a correct sequence and still advances.
 Calculation accuracy is recorded separately and never affects the span. In practice, where the
 student is corrected on the spot, recall is scored against the correct answer.
+
+| | Step up after | Step down after | Start | Floor |
+|---|---|---|---|---|
+| Multiplication | 3 correct recalls in a row | 3 incorrect in a row | 2 | 2 |
+| Fraction comparison | 2 correct recalls in a row | 2 incorrect in a row | 2 | 2 |
+
+A correct recall resets the run of errors and an error resets the run of correct recalls; both
+runs reset whenever the span changes.
+
+**Highest span passed** is the highest span the student stepped up *out of*. Reaching a span
+does not count, nor does getting a sequence right there before falling back: a student who
+passes 4, reaches 5, gets one span-5 sequence right and then drops back to 4 has a highest
+span of 4. A student who never steps up out of span 2 has 0.
+
+**Recall options.** The student taps their answers back from exactly **span + 1** options:
+every distinct answer, plus the distractor closest in value to one of them. Multiplication
+distractors are real times-table products (14 beside 12, never 13). Fraction distractors are
+the other fraction from a pair the student saw, or a same-denominator / same-numerator
+neighbour, never one equal in value to an answer. If answers repeat (12, 12, 15), extra
+distractors keep the pool at span + 1.
+
+## Pre / post tests
+
+Reached from **Pre / Post Test** on the home page. Each test asks only for the student ID and
+whether it is the pretest or the posttest. The items are fixed in `test-bank.js` and are the
+same at pretest and posttest. Open `test-items.html` to review them.
+
+### Memory test
+
+Multiplication first, then fraction comparison. Each part starts with two practice sets at
+span 2 that give the same feedback as training practice. Then comes an adaptive span test,
+with no feedback and no correct-answer review, that looks for the **highest span the
+student can pass**:
+
+| | Up a span after | Stop after | Spans | Sets per span |
+|---|---|---|---|---|
+| Multiplication | 3 correct recalls in a row | 3 incorrect in a row | 2–6 | up to 8 |
+| Fraction comparison | 2 correct recalls in a row | 2 incorrect in a row | 2–6 | up to 6 |
+
+- Everyone starts at span 2.
+- A correct recall resets the run of errors and an error resets the run of correct recalls;
+  both reset when the span goes up.
+- **Same level, same items.** Each span has its own ordered list of sets in `test-bank.js`.
+  The m-th set a student meets at span k is always set k–m, so students at the same level
+  see the same items. Different students reach different levels, so they do not all see
+  every item.
+- **Highest span passed** is the highest span the student moved up out of, as in training.
+  A student who never moves up from span 2 scores 0.
+- A part ends in one of three ways, recorded as `stop_reason`:
+  - `discontinued` — the stop rule fired;
+  - `out-of-sets` — every set at a span was used without passing or stopping. The span
+    counts as not passed, the same outcome as stopping. With 8 sets per span this ends about
+    a quarter of the parts of a student whose recall at that span is a coin flip; with 6 sets
+    and a rule of 2 it is under 3%;
+  - `ceiling` — the student passed span 6.
+
+**Balance.** Within a span every set has the same difficulty mix, so a student who needs
+more attempts at a span is not given harder or easier sets:
+
+| Span | Multiplication (easy ≤ 20, medium 21–40, hard > 40) | Fractions |
+|---|---|---|
+| 2 | easy + medium | easy + medium, never against ½ |
+| 3 | easy + medium + hard | easy + medium + hard |
+| 4 | 1 hard + 3 easy/medium | 1 hard + 3 easy/medium |
+| 5 | 2 easy + 2 medium + 1 hard | 2 easy + 2 medium + 1 hard |
+| 6 | 2 easy + 2 medium + 2 hard | 2 easy + 2 medium + 2 hard |
+
+No set opens on a hard item and no item appears twice within a span. Multiplication answers
+in a set are at least 2 apart; the opening set is 2 × 2 and 3 × 7. Fractions: no set is more
+than half comparisons with ½, no fraction appears twice in a set, and the larger fraction is
+on the left in exactly half the pairs of every span; the opening set is ½ vs ⅓ and ⅞ vs 6/8.
+A student who passes every span without a miss meets only 2 repeated multiplication facts
+(the fewest the 2–9 table allows) and no repeated fraction pair.
+
+### Number line test
+
+Ten proper fractions on a 0–1 line, then ten fractions on a 0–2 line (four proper, six
+improper). Only the endpoints are labelled. Students tap or drag to place a mark and can move
+it before pressing Next; arrow keys nudge it. Each answer is scored as **percent absolute
+error**, |estimate − value| ÷ line length × 100, and the summary reports the mean for each line
+and overall. Response time is recorded too.
+
+### Test data
+
+Results go to two more sheets, created on first use: **`memory-test`** (one row per item, both
+parts, with blank columns for the other part's fields) and **`number-line`** (one row per
+item).
+
+In `memory-test`, `set` counts the scored sets in order, `span` and `level_set` identify the
+bank set (`span` 4, `level_set` 3 is set 4–3 in `test-items.html`), and each row also carries
+the part's `stop_reason`, `stopped_at_span` and `highest_span_passed`. The score for a part
+is `highest_span_passed`.
 
 ## Records
 
@@ -116,8 +213,19 @@ retention and access controls apply. Some Workspace tenants block deploying a we
 5. Copy the deployment URL (it ends in `/exec`) into `UPLOAD_URL` in `config.js`.
 6. Open the `/exec` URL in a browser. It should print `{"ok":true,...}`.
 
-A `fraction` and a `multiplication` sheet are created on first use, each with a header row.
-Leaving `UPLOAD_URL` empty keeps everything offline and local.
+A sheet per task — `fraction`, `multiplication`, `memory-test`, `number-line` — is created on
+first use, each with a header row. Leaving `UPLOAD_URL` empty keeps everything offline and
+local.
+
+**Updating the script.** Editing `Code.gs` does not change a live deployment. After pasting a
+new version, go to **Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy**.
+The `/exec` URL stays the same, so `config.js` does not change. Opening the URL should then
+show `"version": 2`.
+
+The test pages sign their uploads with `UPLOAD_TOKEN + "/tests"`. The first version of the
+script filed any unrecognised task under `fraction`; because it only accepts the plain token,
+it refuses test data instead of misfiling it, and the pages keep those sessions queued until
+the script is updated.
 
 The per-session email can get noisy over 15 lessons. Set `EMAIL_EVERY_SESSION = false` and add
 a daily trigger on `sendDailyDigest` instead; the sheet is written either way.
