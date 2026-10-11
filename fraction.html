@@ -27,27 +27,21 @@
         <div class="card">
           <div class="field-row">
             <div class="field">
-              <label class="label" for="student-name">Name</label>
-              <input id="student-name" class="input" type="text" maxlength="32" />
-            </div>
-            <div class="field">
-              <label class="label" for="student-id">ID</label>
+              <label class="label" for="student-id">Student ID</label>
               <input id="student-id" class="input" type="text" maxlength="32" />
             </div>
-          </div>
-
-          <div class="field-row">
             <div class="field">
               <label class="label" for="lesson">Lesson (1–15)</label>
               <input id="lesson" class="input" type="number" min="1" max="15" value="1" />
             </div>
-            <div class="field">
-              <label class="label" for="condition">Condition</label>
-              <select id="condition" class="input">
-                <option value="wm">Fraction + working memory</option>
-                <option value="only">Fraction only</option>
-              </select>
-            </div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="condition">Condition</label>
+            <select id="condition" class="input">
+              <option value="wm">Fraction + working memory</option>
+              <option value="only">Fraction only</option>
+            </select>
           </div>
 
           <p id="setup-error" class="feedback is-no"></p>
@@ -55,6 +49,7 @@
         </div>
 
         <p id="setup-hint" class="note"></p>
+        <p class="upload-status" id="pending-note"></p>
         <p class="note"><a class="back-link" href="./index.html">← Back to the overview</a></p>
       </section>
 
@@ -138,6 +133,7 @@
 
         <div class="card">
           <p class="note" id="summary-meta"></p>
+          <p class="upload-status" id="upload-status"></p>
           <p class="flag" id="summary-flag" hidden>
             Accuracy is below 50%. Flag this student for closer monitoring in the next session.
           </p>
@@ -152,6 +148,7 @@
       </section>
     </div>
 
+    <script src="./config.js"></script>
     <script src="./fraction.js"></script>
   </body>
 </html>

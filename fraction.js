@@ -28,7 +28,6 @@ const screens = {
   summary: document.getElementById("screen-summary"),
 };
 
-const inputName = document.getElementById("student-name");
 const inputId = document.getElementById("student-id");
 const inputLesson = document.getElementById("lesson");
 const inputCondition = document.getElementById("condition");
@@ -68,6 +67,8 @@ const summarySpan = document.getElementById("summary-span");
 const summaryTrials = document.getElementById("summary-trials");
 const summaryMeta = document.getElementById("summary-meta");
 const summaryFlag = document.getElementById("summary-flag");
+const uploadStatus = document.getElementById("upload-status");
+const pendingNote = document.getElementById("pending-note");
 const btnCsv = document.getElementById("btn-csv");
 const btnCsvAll = document.getElementById("btn-csv-all");
 const btnRestart = document.getElementById("btn-restart");
@@ -224,7 +225,6 @@ function showPhase(name) {
 /* ---------- session state ---------- */
 
 const session = {
-  name: "",
   id: "",
   lesson: 1,
   condition: "wm",
@@ -312,12 +312,12 @@ function updateSetupHint() {
 }
 
 function beginSession() {
-  const name = inputName.value.trim();
+
   const id = inputId.value.trim();
   const lesson = Number(inputLesson.value);
 
-  if (!name || !id) {
-    setupError.textContent = "Please enter both a name and an ID.";
+  if (!id) {
+    setupError.textContent = "Please enter a student ID.";
     return;
   }
   if (!(lesson >= 1 && lesson <= 15)) {
@@ -326,7 +326,6 @@ function beginSession() {
   }
   setupError.textContent = "";
 
-  session.name = name;
   session.id = id;
   session.lesson = lesson;
   session.condition = inputCondition.value;
@@ -786,8 +785,7 @@ function finishSession() {
     : "n/a";
   summaryTrials.textContent = String(scored.length);
   summaryMeta.textContent =
-    session.name +
-    " · ID " +
+    "ID " +
     session.id +
     " · Lesson " +
     session.lesson +
@@ -805,12 +803,12 @@ function finishSession() {
   summaryFlag.hidden = !(counts.total > 0 && accuracy < ACCURACY_FLAG);
 
   saveSession(accuracy);
+  uploadSession(accuracy);
   showScreen("summary");
 }
 
 function sessionRecord(accuracy) {
   return {
-    name: session.name,
     id: session.id,
     lesson: session.lesson,
     condition: isWm() ? "fraction+wm" : "fraction-only",
@@ -836,10 +834,155 @@ function saveSession(accuracy) {
   }
 }
 
+/* ---------- upload ---------- */
+
+const PENDING_KEY = "fractionTask.pending";
+const UPLOAD_TIMEOUT_MS = 10000;
+
+function sessionPayload(record) {
+  return {
+    token: UPLOAD_TOKEN,
+    task: "fraction",
+    id: record.id,
+    lesson: record.lesson,
+    condition: record.condition,
+    startedAt: record.startedAt,
+    header: CSV_HEADER,
+    rows: recordToRows(record),
+    csv: toCsv([record]),
+  };
+}
+
+/* text/plain keeps this a simple request, so the browser skips the CORS
+ * preflight that Apps Script cannot answer. The timeout matters more than it
+ * looks: on a flaky school network a bare fetch can hang for a minute with a
+ * child sitting in front of it. */
+function postPayload(payload) {
+  const controller = new AbortController();
+  const timer = setTimeout(function () {
+    controller.abort();
+  }, UPLOAD_TIMEOUT_MS);
+
+  return fetch(UPLOAD_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload),
+    signal: controller.signal,
+  })
+    .then(function (response) {
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      return response.json();
+    })
+    .then(function (result) {
+      if (!result || result.ok !== true) {
+        throw new Error((result && result.error) || "rejected");
+      }
+      return result;
+    })
+    .finally(function () {
+      clearTimeout(timer);
+    });
+}
+
+function readPending() {
+  try {
+    return JSON.parse(localStorage.getItem(PENDING_KEY) || "[]");
+  } catch (err) {
+    return [];
+  }
+}
+
+function writePending(list) {
+  try {
+    localStorage.setItem(PENDING_KEY, JSON.stringify(list));
+  } catch (err) {
+    /* storage unavailable; the downloaded CSV is the fallback */
+  }
+}
+
+/* Sessions recorded offline wait here and go up the next time this page is
+ * opened with a working connection. */
+function flushPending(onDone) {
+  const list = readPending();
+  if (!UPLOAD_URL || list.length === 0) {
+    if (onDone) onDone(0, list.length);
+    return;
+  }
+
+  let sent = 0;
+  function step() {
+    if (sent >= list.length) {
+      writePending([]);
+      if (onDone) onDone(sent, 0);
+      return;
+    }
+    postPayload(list[sent]).then(
+      function () {
+        sent += 1;
+        step();
+      },
+      function () {
+        writePending(list.slice(sent));
+        if (onDone) onDone(sent, list.length - sent);
+      }
+    );
+  }
+  step();
+}
+
+function showPendingNote() {
+  const waiting = readPending().length;
+  if (!waiting) {
+    pendingNote.textContent = "";
+    pendingNote.className = "upload-status";
+    return;
+  }
+  pendingNote.textContent =
+    waiting +
+    (waiting === 1 ? " session is" : " sessions are") +
+    " waiting to upload. Connect to the internet and reopen this page.";
+  pendingNote.className = "upload-status is-warn";
+}
+
+function uploadSession(accuracy) {
+  const record = sessionRecord(accuracy);
+
+  if (!UPLOAD_URL) {
+    uploadStatus.textContent =
+      "Saved in this browser only. Download the CSV before closing.";
+    uploadStatus.className = "upload-status is-warn";
+    return;
+  }
+
+  uploadStatus.textContent = "Uploading…";
+  uploadStatus.className = "upload-status";
+
+  postPayload(sessionPayload(record)).then(
+    function () {
+      uploadStatus.textContent = "✓ Uploaded to the research spreadsheet.";
+      uploadStatus.className = "upload-status is-ok";
+      flushPending();
+    },
+    function (err) {
+      /* Queue for a later attempt and hand over a file now, so the session
+       * survives both a dead network and a wiped browser profile. */
+      const list = readPending();
+      list.push(sessionPayload(record));
+      writePending(list);
+      uploadStatus.textContent =
+        "No connection (" +
+        (err.name === "AbortError" ? "timed out" : err.message) +
+        "). Saved on this device and downloaded as CSV — it will upload next " +
+        "time this page is opened online.";
+      uploadStatus.className = "upload-status is-warn";
+      downloadThisSession();
+    }
+  );
+}
+
 /* One row per comparison, practice included, so every item and every sequence
  * is in the record. `sequence_correct` repeats across the rows of a set. */
 const CSV_HEADER = [
-  "student_name",
   "student_id",
   "lesson",
   "condition",
@@ -882,7 +1025,6 @@ function recordToRows(record) {
 
     trial.items.forEach(function (item, i) {
       rows.push([
-        record.name,
         record.id,
         record.lesson,
         record.condition,
@@ -974,10 +1116,12 @@ btnRestart.addEventListener("click", function () {
   window.location.reload();
 });
 
-[inputName, inputId].forEach(function (input) {
+[inputId].forEach(function (input) {
   input.addEventListener("keydown", function (event) {
     if (event.key === "Enter") beginSession();
   });
 });
 
 updateSetupHint();
+showPendingNote();
+flushPending(showPendingNote);
