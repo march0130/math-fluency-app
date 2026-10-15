@@ -4,9 +4,10 @@ Browser-only web app.
 
 ## Pages
 
-- **`index.html`** — home page at the site root: the two training tasks and the test entry.
-- **`fraction.html`** / `fraction.js` — the Fraction Comparison training task.
-- **`multiplication.html`** / `multiplication.js` — the Multiplication training task.
+- **`index.html`** — home page at the site root: today's training and the test entry.
+- **`training.html`** / `training.js` — the daily training: multiplication, then fraction
+  comparison, then the progress screen. `training-items.js` generates the items;
+  `progress-chart.js` draws the charts.
 - **`test.html`** — pre/post test chooser: number line or memory.
 - **`memory-test.html`** / `memory-test.js` — memory test: multiplication, then fractions.
 - **`numberline.html`** / `numberline.js` — number line test.
@@ -17,68 +18,79 @@ Browser-only web app.
 Students enter a **study ID only**. No names are collected anywhere, so no name ever leaves
 the device or reaches the spreadsheet. Keep the name-to-ID key offline.
 
-## Fraction Comparison task
+## Daily training
 
-Enter ID, lesson (1–15) and condition, then Start.
+One session per day covers both tasks. Enter the student ID and lesson (1–15) once; the page
+runs **multiplication, then fraction comparison**, then shows the progress screen. There is a
+single group: every student does the working-memory version (solve, hold, recall in order).
+
+| Lessons | Each part | Whole session |
+|---|---|---|
+| 1–3 | 2-minute practice, then 5 minutes of training | about 14 minutes |
+| 4–15 | 5 minutes of training | about 10 minutes |
 
 - **Items** are seeded from the lesson number, so every student in a lesson meets the same
-  pairs in the same order in both conditions. Denominators are drawn from 2, 3, 4, 5, 6, 8,
-  10 and 12. Lessons 1–4 use shared-denominator and shared-numerator pairs, the latter
-  beginning with unit fractions; lessons 5–15 add a fraction greater than one half compared
-  with one half.
-- **Span** starts at 2, rises by one after two consecutive sequences recalled correctly and
-  falls by one after two consecutive sequences recalled incorrectly, with a floor of 2.
-- **Practice** — lessons 1–3 open with a 2-minute practice trial that marks each comparison
-  right or wrong and shows the correct recall order. Practice is recorded but kept separate.
-- **Trial** — 5 minutes. Nothing is marked right or wrong while a set runs. After the recall
-  response is entered, that set's pairs are shown briefly as inequalities (`3/8 < 5/8`). No
-  feedback is given on the recall sequence.
-- **Fraction-only condition** — the same pairs in the same order, answered as they come, with
-  no retain-or-recall step.
+  items in the same order.
+  - *Multiplication:* lessons 1–5 use the facts from 1 to 5, lessons 6–15 the full 1–9
+    range. Four answer choices: the product plus near misses (a factor off by one, the
+    product off by one or two, the sum).
+  - *Fraction comparison:* denominators 2, 3, 4, 5, 6, 8, 10, 12. Lessons 1–4 use
+    shared-denominator and shared-numerator pairs, the latter beginning with unit
+    fractions; lessons 5–15 add a fraction greater than one half compared with one half.
+- **Practice** (lessons 1–3) marks each answer right or wrong and shows the correct recall
+  order. It stays at span 2 and is recorded separately.
+- **Training** marks nothing right or wrong while a set runs. After recall, every item in
+  the set is shown with its correct answer (`3 × 4 = 12`, `3/8 < 5/8`). No feedback is given
+  on the recall sequence.
 
-## Multiplication task
+### How the span moves in training
 
-Same structure as the fraction task: ID, lesson (1–15) and condition.
-
-- **Items** — lessons 1–5 use the facts from 1 to 5, lessons 6–15 the full 1–9 range. Problems
-  are seeded from the lesson number, so every student in a lesson meets the same problems in
-  the same order in both conditions. Each problem offers four answers to choose from: the correct product plus near misses (a factor off by one, the product off by one or two, and the sum).
-- **Span** starts at 2, rises by one after three consecutive sequences recalled correctly and
-  falls by one after three consecutive sequences recalled incorrectly, with a floor of 2.
-- **Practice** — lessons 1–3 open with a 2-minute practice trial that marks each calculation
-  right or wrong and shows the correct recall order.
-- **Trial** — 5 minutes, no feedback. Recall is done by tapping the answers from a pool. After recall, every problem in that set is shown with its
-  correct answer (`3 × 4 = 12`).
-- **Multiplication-only condition** — the same problems in the same order, answered as they
-  come, with no retain-or-recall step.
-
-## How the span moves
-
-In a scored trial the span rises and falls on the **recall sequence alone**. Recall is scored
-against the answer the student gave, not the correct one: a student who computes 3 × 4 as 13
-but recalls 13 in the right position has produced a correct sequence and still advances.
-Calculation accuracy is recorded separately and never affects the span. In practice, where the
-student is corrected on the spot, recall is scored against the correct answer.
-
-| | Step up after | Step down after | Start | Floor |
+| | Up one span | Down one span | Start | Floor |
 |---|---|---|---|---|
-| Multiplication | 3 correct recalls in a row | 3 incorrect in a row | 2 | 2 |
-| Fraction comparison | 2 correct recalls in a row | 2 incorrect in a row | 2 | 2 |
+| Multiplication | 4 correct recalls | 3 incorrect recalls | 2 | 2 |
+| Fraction comparison | 3 correct recalls | 2 incorrect recalls | 2 | 2 |
 
-A correct recall resets the run of errors and an error resets the run of correct recalls; both
-runs reset whenever the span changes.
+Recalls are **counted at the current span, not in a row**; both counts start again whenever
+the span changes. The span moves on the **recall sequence alone**, scored against the answers
+the student gave: a student who computes 3 × 4 as 13 but recalls 13 in the right position has
+a correct sequence. Training always runs the full 5 minutes — errors move the span down,
+they never end the session.
 
-**Highest span passed** is the highest span the student stepped up *out of*. Reaching a span
-does not count, nor does getting a sequence right there before falling back: a student who
+**Highest span passed** is the highest span the student moved up *out of*. A student who
 passes 4, reaches 5, gets one span-5 sequence right and then drops back to 4 has a highest
-span of 4. A student who never steps up out of span 2 has 0.
+span of 4. A student who never moves up from span 2 has 0.
 
 **Recall options.** The student taps their answers back from exactly **span + 1** options:
 every distinct answer, plus the distractor closest in value to one of them. Multiplication
 distractors are real times-table products (14 beside 12, never 13). Fraction distractors are
 the other fraction from a pair the student saw, or a same-denominator / same-numerator
-neighbour, never one equal in value to an answer. If answers repeat (12, 12, 15), extra
-distractors keep the pool at span + 1.
+neighbour, never one equal in value to an answer.
+
+### Progress screen
+
+After both parts the student sees, for each task, a line chart of **highest span** and a
+line chart of **correct answers (%)** across their sessions (the latest 15), with today's
+value labelled. Each chart compares today with the previous session:
+
+| Today vs last session | Shown under the chart |
+|---|---|
+| higher | ⬆ "New high!" / "Better!" (green) |
+| the same | 💪 "Same as last time — keep going!" |
+| lower | 💪 "You can beat it next time!" |
+| no earlier session | ★ "Great start!" |
+
+The whole screen **celebrates with confetti only when a highest span went up** (in either
+task) since the last session, and shows an encouraging "Keep going!" screen otherwise.
+Accuracy keeps its own badges under its charts but does not decide the screen. Hover or the
+arrow keys read any day; "See the numbers" opens a table.
+
+The history comes from two places, merged: this device's own record, and the
+`daily-summary` sheet, so a student who changes device still sees earlier days. The sheet
+is read only for that student's ID and only returns the summary line per task (date,
+lesson, highest span, accuracy).
+
+The training sheets keep their `condition` column so new rows line up with the existing
+header; it is always `multiplication+wm` or `fraction+wm` now.
 
 ## Pre / post tests
 
@@ -91,29 +103,24 @@ same at pretest and posttest. Open `test-items.html` to review them.
 Multiplication first, then fraction comparison. Each part starts with two practice sets at
 span 2 that give the same feedback as training practice. Then comes an adaptive span test,
 with no feedback and no correct-answer review, that looks for the **highest span the
-student can pass**:
+student can pass**. Both parts use the same rules:
 
-| | Up a span after | Stop after | Spans | Sets per span |
+| | Up a span | Stop | Spans | Sets per span |
 |---|---|---|---|---|
-| Multiplication | 3 correct recalls in a row | 3 incorrect in a row | 2–6 | up to 8 |
-| Fraction comparison | 2 correct recalls in a row | 2 incorrect in a row | 2–6 | up to 6 |
+| Multiplication | 4 correct recalls | 3 incorrect recalls | 2–6 | 6 |
+| Fraction comparison | 4 correct recalls | 3 incorrect recalls | 2–6 | 6 |
 
 - Everyone starts at span 2.
-- A correct recall resets the run of errors and an error resets the run of correct recalls;
-  both reset when the span goes up.
+- Recalls are **counted at the current span, not in a row**, and both counts start again at
+  each new span. 4 right or 3 wrong is always reached within 6 sets, so every span is decided.
 - **Same level, same items.** Each span has its own ordered list of sets in `test-bank.js`.
   The m-th set a student meets at span k is always set k–m, so students at the same level
   see the same items. Different students reach different levels, so they do not all see
   every item.
 - **Highest span passed** is the highest span the student moved up out of, as in training.
   A student who never moves up from span 2 scores 0.
-- A part ends in one of three ways, recorded as `stop_reason`:
-  - `discontinued` — the stop rule fired;
-  - `out-of-sets` — every set at a span was used without passing or stopping. The span
-    counts as not passed, the same outcome as stopping. With 8 sets per span this ends about
-    a quarter of the parts of a student whose recall at that span is a coin flip; with 6 sets
-    and a rule of 2 it is under 3%;
-  - `ceiling` — the student passed span 6.
+- A part ends with `stop_reason` `discontinued` (3 wrong at a span) or `ceiling` (passed
+  span 6).
 
 **Balance.** Within a span every set has the same difficulty mix, so a student who needs
 more attempts at a span is not given harder or easier sets:
@@ -130,8 +137,6 @@ No set opens on a hard item and no item appears twice within a span. Multiplicat
 in a set are at least 2 apart; the opening set is 2 × 2 and 3 × 7. Fractions: no set is more
 than half comparisons with ½, no fraction appears twice in a set, and the larger fraction is
 on the left in exactly half the pairs of every span; the opening set is ½ vs ⅓ and ⅞ vs 6/8.
-A student who passes every span without a miss meets only 2 repeated multiplication facts
-(the fewest the 2–9 table allows) and no repeated fraction pair.
 
 ### Number line test
 
@@ -154,10 +159,16 @@ is `highest_span_passed`.
 
 ## Records
 
-Both tasks record every item and every sequence, in practice as well as in the scored trial,
-as **one row per item**: `phase` (practice/trial), `set`, `span`, `set_complete`, the item, the
-correct answer, the student's response, `answer_correct`, and the set's `sequence_correct`.
-Trial accuracy below 50% is flagged on the summary screen.
+Both training tasks record every item and every sequence, in practice as well as in the
+training block, as **one row per item** in the `multiplication` and `fraction` sheets:
+`phase` (practice/trial), `set`, `span`, `set_complete`, the item, the correct answer, the
+student's response, `answer_correct`, and the set's `sequence_correct`. A day's two parts
+share one `session_start`, so they can be joined.
+
+Each training session also adds **one line per task to `daily-summary`**: student ID, session
+start, date, lesson, condition, highest span passed, accuracy, items and items correct. This
+is what the progress charts are drawn from, and it is the quickest place to read each
+student's day-by-day trajectory.
 
 Each finished session is written to three places:
 
@@ -178,7 +189,7 @@ having one:
 - The request **times out after 10 seconds**, so a half-open school network cannot leave a
   child staring at a spinner.
 - A failed session is **queued on the device and downloaded as a CSV** at the same time.
-- The queue is **retried automatically** whenever either task page is opened with a working
+- The queue is **retried automatically** whenever the page is opened again with a working
   connection, and the setup screen says how many sessions are still waiting.
 
 So a session can be run entirely offline and still reach the spreadsheet later. A re-sent
@@ -213,14 +224,20 @@ retention and access controls apply. Some Workspace tenants block deploying a we
 5. Copy the deployment URL (it ends in `/exec`) into `UPLOAD_URL` in `config.js`.
 6. Open the `/exec` URL in a browser. It should print `{"ok":true,...}`.
 
-A sheet per task — `fraction`, `multiplication`, `memory-test`, `number-line` — is created on
-first use, each with a header row. Leaving `UPLOAD_URL` empty keeps everything offline and
-local.
+A sheet per task — `fraction`, `multiplication`, `memory-test`, `number-line`, plus
+`daily-summary` — is created on first use, each with a header row. The student ID column is
+stored as plain text, so an ID such as `007` keeps its zeros. Leaving `UPLOAD_URL` empty keeps
+everything offline and local.
 
 **Updating the script.** Editing `Code.gs` does not change a live deployment. After pasting a
 new version, go to **Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy**.
-The `/exec` URL stays the same, so `config.js` does not change. Opening the URL should then
-show `"version": 2`.
+The `/exec` URL stays the same, so `config.js` does not change. (Choosing *New deployment*
+instead creates a second URL, which then has to go into `config.js`.) Opening the URL should
+then show `"version": 3`.
+
+The progress charts ask the script for a student's earlier days. A script older than
+version 3 does not know that request; the charts then fall back to what this device has
+stored, and the `daily-summary` sheet is not written.
 
 The test pages sign their uploads with `UPLOAD_TOKEN + "/tests"`. The first version of the
 script filed any unrecognised task under `fraction`; because it only accepts the plain token,

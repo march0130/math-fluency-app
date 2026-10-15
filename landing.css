@@ -196,3 +196,34 @@
   font-size: 0.9rem;
   color: var(--text-soft);
 }
+
+/* The daily training is the one thing a student opens, so it spans the row. */
+.tile--hero {
+  grid-column: 1 / -1;
+  min-height: 230px;
+}
+
+.tile--train {
+  --tone: var(--frac);
+  --tone-edge: rgba(124, 92, 255, 0.3);
+}
+
+.tile--train .tile-art {
+  gap: 14px;
+}
+
+.tile-art-mult {
+  color: var(--mult);
+}
+
+.tile-art-frac {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--frac);
+}
+
+.tile--hero .tile-art {
+  flex-wrap: wrap;
+  justify-content: center;
+}

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Fraction Comparison Task</title>
+    <title>Today's Training</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -14,14 +14,12 @@
     <link rel="stylesheet" href="./task.css" />
   </head>
   <body>
-    <div class="app-shell task-shell">
+    <div class="app-shell task-shell tone-mult" id="shell">
       <!-- Setup -->
       <section class="screen is-visible" id="screen-setup">
         <header class="screen-header">
-          <h1 class="title">Fraction Comparison</h1>
-          <p class="subtitle">
-            Compare two fractions, choose the larger one, then recall your answers in order.
-          </p>
+          <h1 class="title">Today's Training</h1>
+          <p class="subtitle">Multiplication first, then fraction comparison.</p>
         </header>
 
         <div class="card">
@@ -36,24 +34,16 @@
             </div>
           </div>
 
-          <div class="field">
-            <label class="label" for="condition">Condition</label>
-            <select id="condition" class="input">
-              <option value="wm">Fraction + working memory</option>
-              <option value="only">Fraction only</option>
-            </select>
-          </div>
-
           <p id="setup-error" class="feedback is-no"></p>
           <button id="btn-start" class="btn primary wide">Start</button>
         </div>
 
         <p id="setup-hint" class="note"></p>
         <p class="upload-status" id="pending-note"></p>
-        <p class="note"><a class="back-link" href="./index.html">← Back to the overview</a></p>
+        <p class="note"><a class="back-link" href="./index.html">← Back</a></p>
       </section>
 
-      <!-- Bridge between practice and trial -->
+      <!-- Between parts -->
       <section class="screen" id="screen-bridge">
         <header class="screen-header">
           <h2 class="title-sm" id="bridge-title"></h2>
@@ -64,15 +54,15 @@
         </div>
       </section>
 
-      <!-- Practice and trial -->
+      <!-- Practice and training -->
       <section class="screen" id="screen-task">
         <header class="screen-header row">
           <div>
-            <h2 class="title-sm" id="task-phase-label">Trial</h2>
+            <h2 class="title-sm" id="task-label"></h2>
             <p class="subtitle" id="task-subtitle"></p>
           </div>
           <div class="header-meta">
-            <span class="pill-flat" id="span-readout">Span 2</span>
+            <span class="pill-flat" id="span-readout"></span>
             <div class="timer-box">
               <span class="label">Time left</span>
               <span id="timer-value" class="timer-value">05:00</span>
@@ -80,17 +70,15 @@
           </div>
         </header>
 
-        <!-- Comparison -->
-        <div class="card phase" id="phase-compare">
-          <p class="phase-label" id="compare-progress"></p>
-          <p class="prompt">Which is larger?</p>
-          <div class="choice-row" id="compare-choices"></div>
-          <p class="feedback" id="compare-feedback"></p>
-          <p class="guidance" id="compare-guidance" hidden></p>
-          <button class="btn primary" id="btn-compare-next" hidden>Next</button>
+        <div class="card phase" id="phase-solve">
+          <p class="phase-label" id="solve-progress"></p>
+          <p class="problem-line" id="solve-prompt"></p>
+          <div class="choice-row" id="solve-choices"></div>
+          <p class="feedback" id="solve-feedback"></p>
+          <p class="guidance" id="solve-guidance" hidden></p>
+          <button class="btn primary" id="btn-solve-next" hidden>Next</button>
         </div>
 
-        <!-- Recall -->
         <div class="card phase" id="phase-recall">
           <p class="phase-label">Recall</p>
           <p class="prompt-sm" id="recall-instruction"></p>
@@ -101,7 +89,6 @@
           <button class="btn primary" id="btn-recall-next" hidden>Next</button>
         </div>
 
-        <!-- End-of-trial review -->
         <div class="card phase" id="phase-review">
           <p class="phase-label">Correct answers</p>
           <div class="review-grid" id="review-grid"></div>
@@ -109,47 +96,33 @@
         </div>
       </section>
 
-      <!-- Summary -->
-      <section class="screen" id="screen-summary">
-        <header class="screen-header">
-          <h2 class="title-sm">Session complete</h2>
-          <p class="subtitle">Thank you for practicing.</p>
-        </header>
-
-        <div class="stat-row">
-          <div class="card stat">
-            <p class="stat-k">Comparison accuracy</p>
-            <p class="stat-v" id="summary-accuracy">—</p>
-          </div>
-          <div class="card stat">
-            <p class="stat-k">Highest span passed</p>
-            <p class="stat-v" id="summary-span">—</p>
-          </div>
-          <div class="card stat">
-            <p class="stat-k">Sets completed</p>
-            <p class="stat-v" id="summary-trials">—</p>
-          </div>
+      <!-- Progress -->
+      <section class="screen" id="screen-progress">
+        <div class="cheer" id="cheer">
+          <div class="confetti" id="confetti" aria-hidden="true"></div>
+          <p class="cheer-emoji" id="cheer-emoji" aria-hidden="true"></p>
+          <h2 class="cheer-title" id="cheer-title"></h2>
+          <p class="cheer-text" id="cheer-text"></p>
         </div>
+
+        <div class="progress-cards" id="progress-cards"></div>
 
         <div class="card">
           <p class="note" id="summary-meta"></p>
-          <p class="upload-status" id="upload-status"></p>
-          <p class="flag" id="summary-flag" hidden>
-            Accuracy is below 50%. Flag this student for closer monitoring in the next session.
-          </p>
+          <p class="upload-status" id="upload-status-mult"></p>
+          <p class="upload-status" id="upload-status-frac"></p>
           <div class="button-row">
-            <button id="btn-csv" class="btn primary">Download this session (CSV)</button>
-            <button id="btn-csv-all" class="btn ghost">Download all saved sessions</button>
-            <button id="btn-restart" class="btn ghost">Start again</button>
+            <button id="btn-restart" class="btn primary">Next student</button>
+            <button id="btn-csv" class="btn ghost">Download CSV</button>
           </div>
         </div>
-
-        <p class="note"><a class="back-link" href="./index.html">← Back to the overview</a></p>
       </section>
     </div>
 
     <script src="./config.js"></script>
     <script src="./common.js"></script>
-    <script src="./fraction.js"></script>
+    <script src="./training-items.js"></script>
+    <script src="./progress-chart.js"></script>
+    <script src="./training.js"></script>
   </body>
 </html>

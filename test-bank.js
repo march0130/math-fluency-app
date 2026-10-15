@@ -5,15 +5,16 @@
  *
  * MEMORY TEST — an adaptive span test that looks for the highest span passed.
  *
- *   Every student starts at span 2. Recalling `stepUpAfter` sets correctly in
- *   a row passes the span and moves up one; recalling `stopAfter` incorrectly
- *   in a row ends the part. Each span has its own ordered list of sets, and
- *   the m-th set a student meets at span k is always `levels[k].sets[m]`, so
- *   every student at the same level sees the same items. A student who uses up
- *   all the sets at a span without passing or stopping ends the part there;
- *   the span counts as not passed.
+ *   Every student starts at span 2 and does at most 6 sets at each span.
+ *   Recalling `passAt` sets correctly at a span — in any order, not
+ *   necessarily in a row — passes it and moves up one; recalling `failAt`
+ *   incorrectly at a span ends the part. 4 right or 3 wrong is always reached
+ *   within 6 sets, so every span is decided. Each span has its own ordered
+ *   list of sets, and the m-th set a student meets at span k is always
+ *   `levels[k].sets[m]`, so every student at the same level sees the same
+ *   items.
  *
- *   Multiplication — step up after 3, stop after 3, 8 sets per span (2–6).
+ *   Multiplication — pass at 4 right, stop at 3 wrong, 6 sets per span (2–6).
  *     Item: [a, b, [four answer choices]]. Facts from 2×2 to 9×9.
  *     Easy ≤ 20, medium 21–40, hard > 40. Every set at a span has the same mix:
  *       span 2  easy + medium
@@ -22,11 +23,10 @@
  *       span 5  2 easy + 2 medium + 1 hard
  *       span 6  2 easy + 2 medium + 2 hard
  *     No set opens on a hard fact, answers within a set are at least 2 apart,
- *     and no fact appears twice within a span. A student who passes every span
- *     on the first three sets meets 60 facts with only 2 repeats (the minimum
- *     the 2–9 table allows).
+ *     and no fact appears twice within a span.
  *
- *   Fraction comparison — step up after 2, stop after 2, 6 sets per span (2–6).
+ *   Fraction comparison — pass at 4 right, stop at 3 wrong, 6 sets per span
+ *   (2–6).
  *     Item: [type, left, right]; the student picks the larger.
  *     Easy: same denominator up to sixths, or unit fractions up to eighths.
  *     Medium: larger denominators, non-unit numerators, or compared with ½ up
@@ -34,9 +34,7 @@
  *     as multiplication. Span 2 never compares with ½; no set is more than
  *     half comparisons with ½; no fraction appears twice in a set (bar ½ as
  *     the benchmark); no pair appears twice within a span; the larger fraction
- *     is on the left in exactly half the pairs of every span. A student who
- *     passes every span on the first two sets meets no repeated pair.
- *     Over the whole bank: 40 same-denominator, 38 same-numerator, 42 with ½.
+ *     is on the left in exactly half the pairs of every span.
  *     Denominators: 2, 3, 4, 5, 6, 8, 10, 12.
  *
  * NUMBER LINE TEST
@@ -46,8 +44,8 @@
 
 const TEST_BANK = {
   multiplication: {
-    stepUpAfter: 3,
-    stopAfter: 3,
+    passAt: 4,
+    failAt: 3,
     practice: [
       [[2, 3, [7, 9, 6, 8]], [5, 2, [15, 9, 10, 12]]],
       [[3, 3, [12, 7, 8, 9]], [2, 4, [10, 8, 6, 9]]],
@@ -62,8 +60,6 @@ const TEST_BANK = {
           [[9, 4, [45, 13, 36, 38]], [3, 5, [13, 15, 10, 12]]],
           [[4, 6, [26, 18, 24, 30]], [2, 9, [18, 17, 16, 20]]],
           [[4, 7, [21, 32, 35, 28]], [3, 6, [21, 19, 18, 15]]],
-          [[5, 7, [35, 42, 33, 37]], [6, 2, [14, 18, 12, 10]]],
-          [[4, 8, [32, 30, 31, 28]], [2, 5, [10, 12, 11, 9]]],
         ],
       },
       {
@@ -75,8 +71,6 @@ const TEST_BANK = {
           [[5, 6, [29, 28, 25, 30]], [7, 8, [57, 55, 56, 58]], [3, 2, [4, 9, 7, 6]]],
           [[2, 7, [21, 14, 12, 16]], [4, 9, [27, 32, 36, 45]], [6, 8, [49, 48, 14, 50]]],
           [[3, 4, [12, 15, 7, 9]], [9, 9, [90, 72, 18, 81]], [7, 3, [14, 20, 22, 21]]],
-          [[2, 6, [10, 18, 6, 12]], [9, 7, [62, 72, 63, 16]], [5, 5, [25, 26, 30, 20]]],
-          [[7, 2, [9, 14, 21, 16]], [6, 5, [11, 30, 25, 31]], [7, 7, [56, 49, 48, 42]]],
         ],
       },
       {
@@ -88,8 +82,6 @@ const TEST_BANK = {
           [[4, 2, [8, 9, 4, 6]], [4, 4, [18, 14, 8, 16]], [9, 3, [12, 27, 28, 24]], [7, 6, [41, 35, 40, 42]]],
           [[7, 4, [35, 28, 24, 26]], [2, 8, [14, 16, 10, 8]], [5, 9, [43, 40, 45, 47]], [3, 8, [32, 22, 24, 16]]],
           [[5, 4, [18, 20, 16, 25]], [9, 8, [73, 72, 74, 63]], [6, 4, [20, 25, 28, 24]], [4, 3, [16, 8, 10, 12]]],
-          [[3, 2, [4, 9, 7, 6]], [4, 6, [26, 18, 24, 30]], [5, 7, [35, 42, 33, 37]], [8, 8, [64, 16, 72, 66]]],
-          [[5, 5, [25, 26, 30, 20]], [8, 6, [47, 48, 14, 49]], [2, 7, [21, 14, 12, 16]], [3, 4, [12, 15, 7, 9]]],
         ],
       },
       {
@@ -101,8 +93,6 @@ const TEST_BANK = {
           [[6, 4, [20, 25, 28, 24]], [6, 5, [11, 30, 25, 31]], [9, 8, [73, 72, 74, 63]], [3, 2, [4, 9, 7, 6]], [4, 4, [18, 14, 8, 16]]],
           [[4, 3, [16, 8, 10, 12]], [5, 5, [25, 26, 30, 20]], [7, 4, [35, 28, 24, 26]], [3, 6, [21, 19, 18, 15]], [5, 9, [43, 40, 45, 47]]],
           [[7, 2, [9, 14, 21, 16]], [5, 6, [29, 28, 25, 30]], [8, 4, [24, 32, 30, 31]], [7, 6, [41, 35, 40, 42]], [2, 2, [2, 6, 4, 3]]],
-          [[3, 9, [29, 27, 24, 36]], [2, 6, [10, 18, 6, 12]], [5, 3, [16, 15, 14, 12]], [6, 6, [38, 42, 35, 36]], [8, 8, [64, 16, 72, 66]]],
-          [[7, 5, [35, 36, 30, 28]], [6, 3, [18, 17, 24, 21]], [7, 8, [57, 55, 56, 58]], [2, 5, [10, 12, 11, 9]], [4, 8, [32, 30, 31, 28]]],
         ],
       },
       {
@@ -114,16 +104,14 @@ const TEST_BANK = {
           [[8, 3, [27, 26, 24, 22]], [5, 9, [43, 40, 45, 47]], [7, 8, [57, 55, 56, 58]], [9, 3, [12, 27, 28, 24]], [2, 2, [2, 6, 4, 3]], [6, 3, [18, 17, 24, 21]]],
           [[3, 5, [13, 15, 10, 12]], [7, 9, [63, 70, 65, 16]], [4, 8, [32, 30, 31, 28]], [3, 9, [29, 27, 24, 36]], [2, 5, [10, 12, 11, 9]], [9, 6, [63, 54, 56, 15]]],
           [[4, 7, [21, 32, 35, 28]], [9, 2, [27, 20, 18, 19]], [6, 6, [38, 42, 35, 36]], [8, 7, [64, 57, 58, 56]], [2, 6, [10, 18, 6, 12]], [8, 9, [72, 80, 74, 64]]],
-          [[8, 4, [24, 32, 30, 31]], [5, 3, [16, 15, 14, 12]], [6, 9, [54, 52, 48, 45]], [7, 7, [56, 49, 48, 42]], [5, 8, [40, 41, 45, 38]], [4, 2, [8, 9, 4, 6]]],
-          [[2, 8, [14, 16, 10, 8]], [4, 6, [26, 18, 24, 30]], [7, 5, [35, 36, 30, 28]], [3, 4, [12, 15, 7, 9]], [9, 5, [14, 45, 36, 46]], [6, 8, [49, 48, 14, 50]]],
         ],
       },
     ],
   },
 
   fraction: {
-    stepUpAfter: 2,
-    stopAfter: 2,
+    passAt: 4,
+    failAt: 3,
     practice: [
       [["sameDen", "1/4", "3/4"], ["sameNum", "1/3", "1/6"]],
       [["sameDen", "2/5", "1/5"], ["sameNum", "1/4", "1/2"]],

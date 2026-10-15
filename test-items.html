@@ -130,7 +130,8 @@
       <h1>Pre / Post Test Items</h1>
       <p class="lede">
         The fixed bank from <code>test-bank.js</code>, the same at pretest and posttest. The memory
-        test is adaptive: everyone starts at span 2 and moves up after a run of correct recalls.
+        test is adaptive: everyone starts at span 2 and does at most 6 sets at each span. 4
+        correct recalls at a span (in any order) move the student up; 3 incorrect end the part.
         The set a student meets at a span is always the next one listed for that span, so
         students at the same level see the same items. Practice rows give feedback and are not
         scored.
@@ -138,8 +139,8 @@
 
       <h2>Memory · Part 1 · Multiplication</h2>
       <p class="lede">
-        Up a span after 3 correct recalls in a row; stops after 3 incorrect in a row. Up to 8 sets
-        per span. Every set at a span has the same easy / medium / hard mix.
+        Up a span at 4 correct recalls; stops at 3 incorrect. 6 sets per span. Every set at a span
+        has the same easy / medium / hard mix.
       </p>
       <table id="mult"></table>
       <p class="legend">
@@ -151,9 +152,8 @@
 
       <h2>Memory · Part 2 · Fraction comparison</h2>
       <p class="lede">
-        Up a span after 2 correct recalls in a row; stops after 2 incorrect in a row. Up to 6 sets
-        per span. The answer is the larger fraction; the symbol shows the correct comparison as the
-        pair is laid out.
+        Up a span at 4 correct recalls; stops at 3 incorrect. 6 sets per span. The answer is the
+        larger fraction; the symbol shows the correct comparison as the pair is laid out.
       </p>
       <table id="frac"></table>
       <p class="legend">

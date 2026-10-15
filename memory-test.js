@@ -5,12 +5,13 @@
  * practice sets that give feedback, then an adaptive span test with no
  * feedback that looks for the highest span the student can pass:
  *
- *   - everyone starts at span 2;
- *   - `stepUpAfter` correct recalls in a row pass the span and move up one;
- *   - `stopAfter` incorrect recalls in a row end the part;
+ *   - everyone starts at span 2 and does at most 6 sets at each span;
+ *   - `passAt` correct recalls at a span (in any order, not necessarily in a
+ *     row) pass it and move up one;
+ *   - `failAt` incorrect recalls at a span end the part;
+ *   - with 4 and 3 a span is always decided within its 6 sets;
  *   - the m-th set a student meets at a span is always the same bank set, so
  *     students at the same level see the same items;
- *   - running out of sets at a span ends the part with that span not passed;
  *   - passing the top span ends the part.
  *
  * As in training, a recall is scored against the answers the student gave, so
@@ -129,8 +130,8 @@ const TASKS = [
     name: "Multiplication",
     part: "Part 1",
     tone: "tone-mult",
-    stepUpAfter: TEST_BANK.multiplication.stepUpAfter,
-    stopAfter: TEST_BANK.multiplication.stopAfter,
+    passAt: TEST_BANK.multiplication.passAt,
+    failAt: TEST_BANK.multiplication.failAt,
     practice: TEST_BANK.multiplication.practice.map(function (items) {
       return { span: items.length, items: items.map(toMultItem) };
     }),
@@ -185,8 +186,8 @@ const TASKS = [
     name: "Fraction Comparison",
     part: "Part 2",
     tone: "",
-    stepUpAfter: TEST_BANK.fraction.stepUpAfter,
-    stopAfter: TEST_BANK.fraction.stopAfter,
+    passAt: TEST_BANK.fraction.passAt,
+    failAt: TEST_BANK.fraction.failAt,
     practice: TEST_BANK.fraction.practice.map(function (items) {
       return { span: items.length, items: items.map(toFracItem) };
     }),
@@ -252,8 +253,8 @@ const run = {
   levelIndex: 0, // which span the student is on, as an index into task().levels
   levelSet: 0, // which set of that span comes next
   setNumber: 0, // scored sets so far in this part
-  consecutiveCorrect: 0,
-  consecutiveWrong: 0,
+  levelCorrect: 0,
+  levelWrong: 0,
   highestPassed: 0,
   set: null,
   recall: null,
@@ -343,8 +344,8 @@ function startScored() {
   run.levelIndex = 0;
   run.levelSet = 0;
   run.setNumber = 0;
-  run.consecutiveCorrect = 0;
-  run.consecutiveWrong = 0;
+  run.levelCorrect = 0;
+  run.levelWrong = 0;
   run.highestPassed = 0;
   taskLabel.textContent = task().part + " · " + task().name;
   taskSubtitle.textContent = "Do your best. Answers are not marked right or wrong.";
@@ -559,24 +560,19 @@ function nextPracticeSet() {
   );
 }
 
-/* The span rules. A correct recall resets the run of errors and an error
- * resets the run of correct recalls. */
+/* The span rules. Right and wrong recalls are counted at the current span,
+ * not in a row, and both counts start again at each new span. */
 function advance(correct) {
   const t = task();
-  if (correct) {
-    run.consecutiveCorrect += 1;
-    run.consecutiveWrong = 0;
-  } else {
-    run.consecutiveWrong += 1;
-    run.consecutiveCorrect = 0;
-  }
+  if (correct) run.levelCorrect += 1;
+  else run.levelWrong += 1;
 
-  if (run.consecutiveWrong >= t.stopAfter) {
+  if (run.levelWrong >= t.failAt) {
     finishTask("discontinued");
     return;
   }
 
-  if (run.consecutiveCorrect >= t.stepUpAfter) {
+  if (run.levelCorrect >= t.passAt) {
     run.highestPassed = level().span;
     if (run.levelIndex + 1 >= t.levels.length) {
       finishTask("ceiling");
@@ -584,16 +580,16 @@ function advance(correct) {
     }
     run.levelIndex += 1;
     run.levelSet = 0;
-    run.consecutiveCorrect = 0;
-    run.consecutiveWrong = 0;
+    run.levelCorrect = 0;
+    run.levelWrong = 0;
     pauseThen(runSet);
     return;
   }
 
   run.levelSet += 1;
   if (run.levelSet >= level().sets.length) {
-    /* Every set at this span used without passing or stopping: the span is
-     * not passed, the same outcome as stopping. */
+    /* Unreachable while passAt + failAt - 1 <= sets per span (4 + 3 - 1 = 6),
+     * kept so a shorter bank fails safe: the span counts as not passed. */
     finishTask("out-of-sets");
     return;
   }
@@ -687,7 +683,7 @@ function describe(taskKey) {
   }).length;
   const endings = {
     discontinued:
-      "stopped at span " + result.stoppedAtSpan + " after " + t.stopAfter + " recall errors in a row",
+      "stopped at span " + result.stoppedAtSpan + " after " + t.failAt + " recall errors at that span",
     "out-of-sets": "used every set at span " + result.stoppedAtSpan + " without passing it",
     ceiling: "passed the top span",
   };

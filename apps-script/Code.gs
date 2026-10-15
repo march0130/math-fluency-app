@@ -1,8 +1,10 @@
 /**
  * Math Fluency + Working Memory — results collector.
  *
- * Receives one finished session from fraction.html / multiplication.html,
- * appends its rows to a Google Sheet, and emails the CSV.
+ * Receives finished sessions from training.html, memory-test.html and
+ * numberline.html, appends their rows to a Google Sheet, and emails the CSV.
+ * Training sessions also add one line per task to a "daily-summary" sheet,
+ * which the training page reads back to draw each student's progress charts.
  *
  * Setup is in the project README. In short:
  *   1. Create a Google Sheet, copy its ID out of the URL into SHEET_ID below.
@@ -37,6 +39,10 @@ function doPost(e) {
       return reply({ ok: false, error: 'bad token' });
     }
 
+    if (payload.action === 'history') {
+      return reply({ ok: true, rows: readHistory(String(payload.id || '')) });
+    }
+
     /* One sheet per task. Anything not on this list is refused rather than
      * creating a stray sheet. */
     const TASKS = ['fraction', 'multiplication', 'memory-test', 'number-line'];
@@ -61,9 +67,23 @@ function doPost(e) {
         while (copy.length < width) copy.push('');
         return copy;
       });
-      sheet
-        .getRange(sheet.getLastRow() + 1, 1, padded.length, width)
-        .setValues(padded);
+      appendRows(sheet, padded, width);
+
+      if (payload.summary) {
+        const s = payload.summary;
+        appendRows(getSheet('daily-summary', SUMMARY_HEADER), [[
+          s.id,
+          s.sessionStart,
+          String(s.sessionStart).slice(0, 10),
+          s.lesson,
+          s.condition,
+          s.task,
+          s.highestSpan === null || s.highestSpan === undefined ? '' : s.highestSpan,
+          s.accuracy === null || s.accuracy === undefined ? '' : s.accuracy,
+          s.items,
+          s.correct,
+        ]], SUMMARY_HEADER.length);
+      }
     } finally {
       lock.releaseLock();
     }
@@ -81,7 +101,59 @@ function doPost(e) {
 /* A browser opening the /exec URL directly gets something readable, which makes
  * it easy to confirm the deployment is live. */
 function doGet() {
-  return reply({ ok: true, service: 'math-fluency collector', version: 2 });
+  return reply({ ok: true, service: 'math-fluency collector', version: 3 });
+}
+
+const SUMMARY_HEADER = [
+  'student_id',
+  'session_start',
+  'date',
+  'lesson',
+  'condition',
+  'task',
+  'highest_span',
+  'accuracy',
+  'items',
+  'items_correct',
+];
+
+/* Column A is the student ID in every sheet. It is stored as plain text, so an
+ * ID such as 007 is not turned into the number 7; the other columns keep
+ * their numbers as numbers. */
+function appendRows(sheet, rows, width) {
+  if (!rows.length) return;
+  const start = sheet.getLastRow() + 1;
+  sheet.getRange(start, 1, rows.length, 1).setNumberFormat('@');
+  sheet.getRange(start, 1, rows.length, width).setValues(rows);
+}
+
+/* Only the daily summary is ever read back, and only one student's lines:
+ * a session date, lesson, condition, highest span and accuracy per task. */
+function readHistory(id) {
+  if (!id) return [];
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('daily-summary');
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, SUMMARY_HEADER.length).getValues();
+  const text = function (v) {
+    return v instanceof Date ? v.toISOString() : v;
+  };
+  return values
+    .filter(function (row) {
+      return String(row[0]) === id;
+    })
+    .map(function (row) {
+      return {
+        id: String(row[0]),
+        sessionStart: text(row[1]),
+        lesson: row[3],
+        condition: row[4],
+        task: row[5],
+        highestSpan: row[6],
+        accuracy: row[7],
+        items: row[8],
+        correct: row[9],
+      };
+    });
 }
 
 function getSheet(task, header) {
