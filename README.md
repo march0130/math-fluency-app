@@ -47,8 +47,14 @@ single group: every student does the working-memory version (solve, hold, recall
 
 | | Up one span | Down one span | Start | Floor |
 |---|---|---|---|---|
-| Multiplication | 4 correct recalls | 3 incorrect recalls | 2 | 2 |
-| Fraction comparison | 3 correct recalls | 2 incorrect recalls | 2 | 2 |
+| Multiplication | 4 correct recalls | 3 incorrect recalls | last session's highest span | 2 |
+| Fraction comparison | 3 correct recalls | 2 incorrect recalls | last session's highest span | 2 |
+
+**Where a day starts.** Each task's training block starts at the **highest span the student
+reached in their previous session** of that task (see below), read from the `daily-summary`
+sheet and this device's own record. The first session, or a previous session with a highest
+span of 0, starts at span 2. The setup screen waits for the lookup (up to 10 seconds); without
+a connection it uses what this device has. Practice (lessons 1–3) always stays at span 2.
 
 Recalls are **counted at the current span, not in a row**; both counts start again whenever
 the span changes. The span moves on the **recall sequence alone**, scored against the answers
@@ -56,9 +62,16 @@ the student gave: a student who computes 3 × 4 as 13 but recalls 13 in the righ
 a correct sequence. Training always runs the full 5 minutes — errors move the span down,
 they never end the session.
 
-**Highest span passed** is the highest span the student moved up *out of*. A student who
-passes 4, reaches 5, gets one span-5 sequence right and then drops back to 4 has a highest
-span of 4. A student who never moves up from span 2 has 0.
+**Highest span** is the highest span at which the student got **3 correct recalls in one
+stay**, whether or not they then moved up. Each arrival at a span starts its counts from 0:
+a multiplication student who gets 3 right and 3 wrong at span 4 has reached 4 and drops back
+to 3; if they return to span 4 later, they start that span over. A student who gets 1 or 2
+right at span 5 before dropping back has not reached 5. A student who never gets 3 right at
+any span has 0.
+
+In multiplication a stay lasts at most 6 sets (4 right or 3 wrong ends it). In fraction
+comparison 3 right already moves the student up, so reaching a span and moving up out of it
+are the same thing there.
 
 **Recall options.** The student taps their answers back from exactly **span + 1** options:
 every distinct answer, plus the distractor closest in value to one of them. Multiplication
@@ -103,12 +116,12 @@ same at pretest and posttest. Open `test-items.html` to review them.
 Multiplication first, then fraction comparison. Each part starts with two practice sets at
 span 2 that give the same feedback as training practice. Then comes an adaptive span test,
 with no feedback and no correct-answer review, that looks for the **highest span the
-student can pass**. Both parts use the same rules:
+student can reach**. Both parts use the same rules:
 
 | | Up a span | Stop | Spans | Sets per span |
 |---|---|---|---|---|
-| Multiplication | 4 correct recalls | 3 incorrect recalls | 2–6 | 6 |
-| Fraction comparison | 4 correct recalls | 3 incorrect recalls | 2–6 | 6 |
+| Multiplication | 4 correct recalls | 3 incorrect recalls | 2–9 | 6 |
+| Fraction comparison | 4 correct recalls | 3 incorrect recalls | 2–9 | 6 |
 
 - Everyone starts at span 2.
 - Recalls are **counted at the current span, not in a row**, and both counts start again at
@@ -116,11 +129,14 @@ student can pass**. Both parts use the same rules:
 - **Same level, same items.** Each span has its own ordered list of sets in `test-bank.js`.
   The m-th set a student meets at span k is always set k–m, so students at the same level
   see the same items. Different students reach different levels, so they do not all see
-  every item.
-- **Highest span passed** is the highest span the student moved up out of, as in training.
-  A student who never moves up from span 2 scores 0.
+  every item. A part stops as soon as the third wrong recall at a span comes, so a student
+  who gets the first 3 sets at a span wrong does only those 3 sets there; the other sets are
+  still in the bank for the next student.
+- **Highest span** is the highest span at which the student got **3 correct recalls**, as in
+  training. A span that ends 3 right and 3 wrong still counts (the test stops there, and that
+  span is the score). A student who never gets 3 right at span 2 scores 0.
 - A part ends with `stop_reason` `discontinued` (3 wrong at a span) or `ceiling` (passed
-  span 6).
+  span 9).
 
 **Balance.** Within a span every set has the same difficulty mix, so a student who needs
 more attempts at a span is not given harder or easier sets:
@@ -132,6 +148,14 @@ more attempts at a span is not given harder or easier sets:
 | 4 | 1 hard + 3 easy/medium | 1 hard + 3 easy/medium |
 | 5 | 2 easy + 2 medium + 1 hard | 2 easy + 2 medium + 1 hard |
 | 6 | 2 easy + 2 medium + 2 hard | 2 easy + 2 medium + 2 hard |
+| 7 | 2 easy + 3 medium + 2 hard | 2 easy + 3 medium + 2 hard |
+| 8 | 3 easy + 3 medium + 2 hard | 3 easy + 3 medium + 2 hard |
+| 9 | 2 hard + 7 easy/medium (3 + 4 or 4 + 3) | 3 easy + 4 medium + 2 hard |
+
+Spans 7–9 were added after spans 2–6, under the same rules and without changing any earlier
+set. Hard items stop at 2 per set because there are only 17 hard multiplication facts and 12
+hard fraction pairs, and no item may appear twice within a span; span 9 of multiplication
+uses 54 of the 60 facts.
 
 No set opens on a hard item and no item appears twice within a span. Multiplication answers
 in a set are at least 2 apart; the opening set is 2 × 2 and 3 × 7. Fractions: no set is more
@@ -155,7 +179,8 @@ item).
 In `memory-test`, `set` counts the scored sets in order, `span` and `level_set` identify the
 bank set (`span` 4, `level_set` 3 is set 4–3 in `test-items.html`), and each row also carries
 the part's `stop_reason`, `stopped_at_span` and `highest_span_passed`. The score for a part
-is `highest_span_passed`.
+is `highest_span_passed`, which holds the highest span with 3 correct recalls (the column
+keeps its old name so existing sheets line up).
 
 ## Records
 
@@ -166,7 +191,7 @@ student's response, `answer_correct`, and the set's `sequence_correct`. A day's 
 share one `session_start`, so they can be joined.
 
 Each training session also adds **one line per task to `daily-summary`**: student ID, session
-start, date, lesson, condition, highest span passed, accuracy, items and items correct. This
+start, date, lesson, condition, highest span, accuracy, items and items correct. This
 is what the progress charts are drawn from, and it is the quickest place to read each
 student's day-by-day trajectory.
 

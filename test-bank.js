@@ -3,7 +3,7 @@
  * Nothing here is random at run time. Edit this file to change the test, and
  * keep the old version if any data has already been collected with it.
  *
- * MEMORY TEST — an adaptive span test that looks for the highest span passed.
+ * MEMORY TEST — an adaptive span test that looks for the highest span reached.
  *
  *   Every student starts at span 2 and does at most 6 sets at each span.
  *   Recalling `passAt` sets correctly at a span — in any order, not
@@ -12,9 +12,12 @@
  *   within 6 sets, so every span is decided. Each span has its own ordered
  *   list of sets, and the m-th set a student meets at span k is always
  *   `levels[k].sets[m]`, so every student at the same level sees the same
- *   items.
+ *   items. The score is the highest span with 3 correct recalls.
  *
- *   Multiplication — pass at 4 right, stop at 3 wrong, 6 sets per span (2–6).
+ *   Spans 2–6 are the original bank; spans 7–9 were added later under the same
+ *   rules, without changing any earlier set.
+ *
+ *   Multiplication — pass at 4 right, stop at 3 wrong, 6 sets per span (2–9).
  *     Item: [a, b, [four answer choices]]. Facts from 2×2 to 9×9.
  *     Easy ≤ 20, medium 21–40, hard > 40. Every set at a span has the same mix:
  *       span 2  easy + medium
@@ -22,19 +25,27 @@
  *       span 4  1 hard, plus easy/medium (EEMH or EMMH)
  *       span 5  2 easy + 2 medium + 1 hard
  *       span 6  2 easy + 2 medium + 2 hard
+ *       span 7  2 easy + 3 medium + 2 hard
+ *       span 8  3 easy + 3 medium + 2 hard
+ *       span 9  2 hard, plus 3 easy + 4 medium or 4 easy + 3 medium
  *     No set opens on a hard fact, answers within a set are at least 2 apart,
- *     and no fact appears twice within a span.
+ *     and no fact appears twice within a span. There are only 17 hard facts
+ *     (60 facts in all, practice aside), so no span can hold more than 2 hard
+ *     facts per set, and span 9 uses 54 of the 60. A fact always shows the
+ *     same four choices, wherever it appears.
  *
  *   Fraction comparison — pass at 4 right, stop at 3 wrong, 6 sets per span
- *   (2–6).
+ *   (2–9).
  *     Item: [type, left, right]; the student picks the larger.
  *     Easy: same denominator up to sixths, or unit fractions up to eighths.
  *     Medium: larger denominators, non-unit numerators, or compared with ½ up
- *     to sixths. Hard: compared with ½, eighths and above. Same mixes per span
- *     as multiplication. Span 2 never compares with ½; no set is more than
- *     half comparisons with ½; no fraction appears twice in a set (bar ½ as
- *     the benchmark); no pair appears twice within a span; the larger fraction
- *     is on the left in exactly half the pairs of every span.
+ *     to sixths. Hard: compared with ½, eighths and above. Spans 2–8 have the
+ *     same mixes as multiplication; span 9 is 3 easy + 4 medium + 2 hard.
+ *     There are only 12 hard pairs, so spans 7–9 hold 2 per set. Span 2 never
+ *     compares with ½; no set is more than half comparisons with ½; no
+ *     fraction appears twice in a set (bar ½ as the benchmark); no pair
+ *     appears twice within a span; the larger fraction is on the left in
+ *     exactly half the pairs of every span.
  *     Denominators: 2, 3, 4, 5, 6, 8, 10, 12.
  *
  * NUMBER LINE TEST
@@ -106,6 +117,39 @@ const TEST_BANK = {
           [[4, 7, [21, 32, 35, 28]], [9, 2, [27, 20, 18, 19]], [6, 6, [38, 42, 35, 36]], [8, 7, [64, 57, 58, 56]], [2, 6, [10, 18, 6, 12]], [8, 9, [72, 80, 74, 64]]],
         ],
       },
+      {
+        span: 7,
+        sets: [
+          [[3, 2, [4, 9, 7, 6]], [6, 4, [20, 25, 28, 24]], [7, 8, [57, 55, 56, 58]], [5, 9, [43, 40, 45, 47]], [2, 7, [21, 14, 12, 16]], [3, 9, [29, 27, 24, 36]], [4, 8, [32, 30, 31, 28]]],
+          [[2, 5, [10, 12, 11, 9]], [4, 4, [18, 14, 8, 16]], [6, 9, [54, 52, 48, 45]], [3, 8, [32, 22, 24, 16]], [5, 6, [29, 28, 25, 30]], [3, 7, [20, 23, 10, 21]], [9, 9, [90, 72, 18, 81]]],
+          [[8, 2, [18, 16, 17, 14]], [7, 6, [41, 35, 40, 42]], [5, 8, [40, 41, 45, 38]], [9, 6, [63, 54, 56, 15]], [5, 7, [35, 42, 33, 37]], [2, 2, [2, 6, 4, 3]], [7, 3, [14, 20, 22, 21]]],
+          [[7, 5, [35, 36, 30, 28]], [8, 8, [64, 16, 72, 66]], [7, 2, [9, 14, 21, 16]], [9, 3, [12, 27, 28, 24]], [8, 7, [64, 57, 58, 56]], [5, 5, [25, 26, 30, 20]], [6, 3, [18, 17, 24, 21]]],
+          [[5, 3, [16, 15, 14, 12]], [6, 8, [49, 48, 14, 50]], [4, 9, [27, 32, 36, 45]], [6, 5, [11, 30, 25, 31]], [9, 8, [73, 72, 74, 63]], [5, 4, [18, 20, 16, 25]], [8, 3, [27, 26, 24, 22]]],
+          [[4, 5, [25, 18, 20, 15]], [6, 6, [38, 42, 35, 36]], [8, 4, [24, 32, 30, 31]], [8, 5, [39, 41, 40, 32]], [4, 2, [8, 9, 4, 6]], [8, 6, [47, 48, 14, 49]], [9, 7, [62, 72, 63, 16]]],
+        ],
+      },
+      {
+        span: 8,
+        sets: [
+          [[8, 3, [27, 26, 24, 22]], [4, 2, [8, 9, 4, 6]], [6, 9, [54, 52, 48, 45]], [8, 5, [39, 41, 40, 32]], [6, 6, [38, 42, 35, 36]], [4, 3, [16, 8, 10, 12]], [8, 9, [72, 80, 74, 64]], [5, 4, [18, 20, 16, 25]]],
+          [[5, 6, [29, 28, 25, 30]], [4, 8, [32, 30, 31, 28]], [3, 5, [13, 15, 10, 12]], [2, 9, [18, 17, 16, 20]], [8, 7, [64, 57, 58, 56]], [4, 5, [25, 18, 20, 15]], [9, 3, [12, 27, 28, 24]], [6, 8, [49, 48, 14, 50]]],
+          [[3, 9, [29, 27, 24, 36]], [6, 7, [49, 42, 36, 13]], [9, 9, [90, 72, 18, 81]], [2, 7, [21, 14, 12, 16]], [5, 5, [25, 26, 30, 20]], [2, 8, [14, 16, 10, 8]], [6, 3, [18, 17, 24, 21]], [8, 4, [24, 32, 30, 31]]],
+          [[3, 2, [4, 9, 7, 6]], [4, 4, [18, 14, 8, 16]], [5, 8, [40, 41, 45, 38]], [9, 6, [63, 54, 56, 15]], [3, 7, [20, 23, 10, 21]], [6, 2, [14, 18, 12, 10]], [9, 8, [73, 72, 74, 63]], [7, 4, [35, 28, 24, 26]]],
+          [[5, 3, [16, 15, 14, 12]], [9, 2, [27, 20, 18, 19]], [8, 6, [47, 48, 14, 49]], [9, 5, [14, 45, 36, 46]], [6, 4, [20, 25, 28, 24]], [7, 5, [35, 36, 30, 28]], [7, 3, [14, 20, 22, 21]], [2, 2, [2, 6, 4, 3]]],
+          [[3, 4, [12, 15, 7, 9]], [8, 8, [64, 16, 72, 66]], [5, 7, [35, 42, 33, 37]], [5, 9, [43, 40, 45, 47]], [7, 2, [9, 14, 21, 16]], [6, 5, [11, 30, 25, 31]], [4, 7, [21, 32, 35, 28]], [2, 5, [10, 12, 11, 9]]],
+        ],
+      },
+      {
+        span: 9,
+        sets: [
+          [[6, 6, [38, 42, 35, 36]], [3, 5, [13, 15, 10, 12]], [4, 6, [26, 18, 24, 30]], [3, 7, [20, 23, 10, 21]], [6, 9, [54, 52, 48, 45]], [8, 5, [39, 41, 40, 32]], [2, 9, [18, 17, 16, 20]], [7, 7, [56, 49, 48, 42]], [3, 4, [12, 15, 7, 9]]],
+          [[2, 6, [10, 18, 6, 12]], [3, 8, [32, 22, 24, 16]], [4, 2, [8, 9, 4, 6]], [9, 3, [12, 27, 28, 24]], [8, 6, [47, 48, 14, 49]], [2, 2, [2, 6, 4, 3]], [8, 7, [64, 57, 58, 56]], [6, 5, [11, 30, 25, 31]], [3, 2, [4, 9, 7, 6]]],
+          [[7, 5, [35, 36, 30, 28]], [8, 9, [72, 80, 74, 64]], [7, 3, [14, 20, 22, 21]], [6, 2, [14, 18, 12, 10]], [9, 7, [62, 72, 63, 16]], [5, 3, [16, 15, 14, 12]], [9, 2, [27, 20, 18, 19]], [5, 5, [25, 26, 30, 20]], [3, 9, [29, 27, 24, 36]]],
+          [[8, 2, [18, 16, 17, 14]], [7, 4, [35, 28, 24, 26]], [8, 8, [64, 16, 72, 66]], [6, 4, [20, 25, 28, 24]], [5, 6, [29, 28, 25, 30]], [4, 5, [25, 18, 20, 15]], [6, 3, [18, 17, 24, 21]], [7, 8, [57, 55, 56, 58]], [4, 3, [16, 8, 10, 12]]],
+          [[2, 5, [10, 12, 11, 9]], [8, 4, [24, 32, 30, 31]], [7, 2, [9, 14, 21, 16]], [8, 3, [27, 26, 24, 22]], [5, 7, [35, 42, 33, 37]], [4, 4, [18, 14, 8, 16]], [7, 9, [63, 70, 65, 16]], [5, 8, [40, 41, 45, 38]], [7, 6, [41, 35, 40, 42]]],
+          [[5, 4, [18, 20, 16, 25]], [3, 6, [21, 19, 18, 15]], [9, 4, [45, 13, 36, 38]], [6, 7, [49, 42, 36, 13]], [5, 9, [43, 40, 45, 47]], [4, 8, [32, 30, 31, 28]], [4, 7, [21, 32, 35, 28]], [2, 8, [14, 16, 10, 8]], [2, 7, [21, 14, 12, 16]]],
+        ],
+      },
     ],
   },
 
@@ -170,6 +214,39 @@ const TEST_BANK = {
           [["sameDen", "1/5", "3/5"], ["vsHalf", "1/2", "9/10"], ["vsHalf", "7/8", "1/2"], ["sameDen", "4/12", "5/12"], ["sameNum", "1/3", "1/4"], ["sameNum", "1/10", "1/6"]],
           [["sameNum", "3/5", "3/6"], ["sameDen", "2/6", "4/6"], ["sameNum", "3/10", "3/12"], ["vsHalf", "10/12", "1/2"], ["vsHalf", "8/10", "1/2"], ["sameDen", "2/4", "3/4"]],
           [["vsHalf", "1/2", "3/4"], ["vsHalf", "6/10", "1/2"], ["vsHalf", "1/2", "8/12"], ["sameDen", "7/10", "3/10"], ["sameDen", "2/6", "1/6"], ["sameNum", "1/8", "1/4"]],
+        ],
+      },
+      {
+        span: 7,
+        sets: [
+          [["sameNum", "1/5", "1/4"], ["sameNum", "2/6", "2/8"], ["vsHalf", "1/2", "5/8"], ["vsHalf", "1/2", "6/10"], ["sameDen", "4/5", "2/5"], ["sameNum", "3/12", "3/4"], ["sameNum", "1/8", "1/10"]],
+          [["sameNum", "1/5", "1/6"], ["sameDen", "5/6", "4/6"], ["vsHalf", "1/2", "6/8"], ["sameNum", "2/12", "2/6"], ["sameNum", "2/4", "2/3"], ["sameNum", "1/8", "1/12"], ["vsHalf", "1/2", "7/12"]],
+          [["sameDen", "2/5", "3/5"], ["vsHalf", "7/8", "1/2"], ["sameDen", "1/10", "9/10"], ["vsHalf", "9/12", "1/2"], ["sameDen", "2/10", "3/10"], ["sameDen", "2/6", "1/6"], ["sameNum", "1/5", "1/12"]],
+          [["sameNum", "1/3", "1/12"], ["vsHalf", "1/2", "11/12"], ["sameDen", "4/6", "2/6"], ["sameDen", "6/10", "8/10"], ["vsHalf", "10/12", "1/2"], ["sameNum", "3/10", "3/4"], ["sameDen", "1/5", "3/5"]],
+          [["sameDen", "3/6", "5/6"], ["vsHalf", "8/10", "1/2"], ["sameDen", "5/12", "7/12"], ["sameNum", "3/10", "3/5"], ["vsHalf", "7/10", "1/2"], ["sameNum", "1/4", "1/3"], ["sameDen", "9/10", "2/10"]],
+          [["sameDen", "4/5", "1/5"], ["sameNum", "1/12", "1/6"], ["sameDen", "7/8", "5/8"], ["sameNum", "3/4", "3/6"], ["sameNum", "1/8", "1/3"], ["vsHalf", "9/10", "1/2"], ["vsHalf", "8/12", "1/2"]],
+        ],
+      },
+      {
+        span: 8,
+        sets: [
+          [["sameDen", "1/5", "3/5"], ["sameNum", "2/10", "2/3"], ["vsHalf", "8/10", "1/2"], ["sameNum", "3/8", "3/10"], ["vsHalf", "1/2", "9/12"], ["sameDen", "2/6", "1/6"], ["sameDen", "5/6", "3/6"], ["sameNum", "2/12", "2/5"]],
+          [["sameDen", "4/5", "1/5"], ["sameNum", "3/4", "3/6"], ["sameDen", "3/5", "2/5"], ["sameNum", "1/12", "1/6"], ["sameDen", "3/10", "2/10"], ["vsHalf", "7/8", "1/2"], ["vsHalf", "1/2", "7/12"], ["sameDen", "2/6", "4/6"]],
+          [["sameDen", "5/10", "6/10"], ["sameNum", "1/5", "1/6"], ["sameNum", "1/8", "1/3"], ["sameNum", "1/4", "1/10"], ["sameDen", "5/8", "6/8"], ["sameDen", "4/5", "3/5"], ["vsHalf", "1/2", "10/12"], ["vsHalf", "1/2", "11/12"]],
+          [["sameNum", "3/12", "3/5"], ["sameNum", "1/3", "1/4"], ["sameDen", "5/12", "1/12"], ["sameNum", "2/10", "2/8"], ["vsHalf", "7/10", "1/2"], ["sameNum", "1/6", "1/8"], ["vsHalf", "1/2", "6/8"], ["sameDen", "4/6", "5/6"]],
+          [["sameDen", "1/12", "7/12"], ["sameNum", "1/4", "1/8"], ["sameDen", "7/10", "5/10"], ["sameNum", "3/8", "3/5"], ["sameNum", "1/3", "1/5"], ["vsHalf", "9/10", "1/2"], ["vsHalf", "1/2", "8/12"], ["sameDen", "2/4", "3/4"]],
+          [["vsHalf", "1/2", "3/4"], ["sameNum", "1/10", "1/12"], ["sameDen", "7/8", "4/8"], ["sameNum", "1/5", "1/4"], ["vsHalf", "5/8", "1/2"], ["sameDen", "1/6", "4/6"], ["vsHalf", "1/2", "6/10"], ["sameDen", "4/5", "2/5"]],
+        ],
+      },
+      {
+        span: 9,
+        sets: [
+          [["sameNum", "1/3", "1/8"], ["sameNum", "3/10", "3/12"], ["sameDen", "4/8", "5/8"], ["vsHalf", "6/10", "1/2"], ["vsHalf", "8/10", "1/2"], ["sameNum", "2/8", "2/10"], ["sameDen", "1/6", "4/6"], ["sameDen", "4/12", "11/12"], ["sameDen", "3/4", "2/4"]],
+          [["sameNum", "1/5", "1/3"], ["vsHalf", "1/2", "9/10"], ["vsHalf", "3/4", "1/2"], ["sameDen", "5/6", "2/6"], ["sameNum", "1/4", "1/8"], ["sameNum", "1/10", "1/6"], ["sameDen", "8/12", "4/12"], ["vsHalf", "1/2", "7/8"], ["sameNum", "3/6", "3/5"]],
+          [["sameDen", "2/8", "5/8"], ["sameDen", "11/12", "7/12"], ["sameNum", "1/5", "1/4"], ["sameDen", "2/6", "1/6"], ["sameNum", "3/12", "3/8"], ["sameDen", "2/5", "3/5"], ["vsHalf", "1/2", "8/12"], ["vsHalf", "6/8", "1/2"], ["sameDen", "5/12", "10/12"]],
+          [["sameNum", "1/5", "1/8"], ["vsHalf", "1/2", "7/10"], ["sameNum", "2/3", "2/8"], ["sameNum", "1/6", "1/4"], ["sameDen", "3/12", "4/12"], ["sameDen", "3/10", "9/10"], ["sameDen", "4/5", "2/5"], ["vsHalf", "1/2", "9/12"], ["sameDen", "6/10", "2/10"]],
+          [["sameNum", "3/4", "3/5"], ["sameNum", "1/5", "1/6"], ["sameNum", "2/12", "2/8"], ["sameDen", "9/10", "5/10"], ["vsHalf", "5/8", "1/2"], ["sameDen", "4/6", "3/6"], ["sameNum", "1/4", "1/3"], ["sameDen", "1/10", "8/10"], ["vsHalf", "1/2", "10/12"]],
+          [["sameNum", "2/5", "2/8"], ["sameDen", "5/6", "3/6"], ["vsHalf", "1/2", "11/12"], ["sameNum", "1/6", "1/8"], ["sameNum", "2/3", "2/6"], ["sameNum", "3/4", "3/8"], ["sameDen", "1/5", "3/5"], ["sameDen", "4/10", "8/10"], ["vsHalf", "1/2", "7/12"]],
         ],
       },
     ],

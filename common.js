@@ -153,6 +153,14 @@ function fractionRecallPool(targets, pairs, rng) {
   return buildRecallPool(targets, candidates, fracKey, fracValue, rng);
 }
 
+/* ---------- highest span ----------
+ *
+ * A span counts as reached once the student has this many correct recalls in
+ * one stay at it, whether or not they then move up. The counts start from 0
+ * each time the student arrives at a span, so after dropping back a student
+ * starts that span over. Training and the pre/post tests share this rule. */
+const SPAN_REACHED_AT = 3;
+
 /* ---------- CSV and files ---------- */
 
 function csvCell(value) {

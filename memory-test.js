@@ -3,7 +3,7 @@
  * Runs the two span tasks back to back on the fixed bank in test-bank.js:
  * multiplication first, then fraction comparison. Each part opens with two
  * practice sets that give feedback, then an adaptive span test with no
- * feedback that looks for the highest span the student can pass:
+ * feedback that looks for the highest span the student can reach:
  *
  *   - everyone starts at span 2 and does at most 6 sets at each span;
  *   - `passAt` correct recalls at a span (in any order, not necessarily in a
@@ -13,6 +13,9 @@
  *   - the m-th set a student meets at a span is always the same bank set, so
  *     students at the same level see the same items;
  *   - passing the top span ends the part.
+ *
+ * The score is the highest span at which the student got SPAN_REACHED_AT (3)
+ * correct recalls, so a span ending 3 right and 3 wrong still counts.
  *
  * As in training, a recall is scored against the answers the student gave, so
  * a wrong calculation recalled faithfully is a correct sequence.
@@ -567,13 +570,18 @@ function advance(correct) {
   if (correct) run.levelCorrect += 1;
   else run.levelWrong += 1;
 
+  /* 3 correct at a span is enough for it to count, even if the test then
+   * stops there (3 correct, 3 wrong). */
+  if (run.levelCorrect >= SPAN_REACHED_AT) {
+    run.highestPassed = level().span;
+  }
+
   if (run.levelWrong >= t.failAt) {
     finishTask("discontinued");
     return;
   }
 
   if (run.levelCorrect >= t.passAt) {
-    run.highestPassed = level().span;
     if (run.levelIndex + 1 >= t.levels.length) {
       finishTask("ceiling");
       return;
@@ -589,7 +597,7 @@ function advance(correct) {
   run.levelSet += 1;
   if (run.levelSet >= level().sets.length) {
     /* Unreachable while passAt + failAt - 1 <= sets per span (4 + 3 - 1 = 6),
-     * kept so a shorter bank fails safe: the span counts as not passed. */
+     * kept so a shorter bank fails safe: the part ends at that span. */
     finishTask("out-of-sets");
     return;
   }

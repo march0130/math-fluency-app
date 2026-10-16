@@ -7,15 +7,18 @@
  * answer and on the recall order), then runs a full 5-minute training block
  * with no right/wrong marking; after each set the correct answers are shown.
  *
- * Span rules, counted at the current span (not in a row; both counts start
- * again whenever the span changes), with a floor of span 2:
+ * Each task's training block starts at the highest span the student reached
+ * in their previous session (span 2 the first time). Span rules, counted at
+ * the current span (not in a row; both counts start again whenever the span
+ * changes), with a floor of span 2:
  *
  *   multiplication       4 correct recalls → up one, 3 incorrect → down one
  *   fraction comparison  3 correct recalls → up one, 2 incorrect → down one
  *
  * As before, a recall is scored against the answers the student gave, so a
  * wrong calculation recalled faithfully is a correct sequence. The highest
- * span is the highest span the student moved up out of.
+ * span is the highest span at which the student got 3 correct recalls in one
+ * stay (SPAN_REACHED_AT), whether or not they then moved up.
  *
  * At the end a progress screen charts each task's highest span and accuracy
  * over the student's sessions and compares today with the previous session.
@@ -355,6 +358,7 @@ const session = {
   deadline: 0,
   ticker: null,
   results: {},
+  startSpans: {}, // per task: where today's training block begins
 };
 
 function task() {
@@ -488,12 +492,43 @@ function beginSession() {
     return;
   }
   setupError.textContent = "";
+  if (btnStart.disabled) return;
 
   session.id = id;
   session.lesson = lesson;
   session.startedAt = new Date();
   session.results = {};
-  startTask(0);
+
+  btnStart.disabled = true;
+  setupHint.textContent = "Looking up this student's last session…";
+  loadHistory(id).then(function (history) {
+    TASKS.forEach(function (t) {
+      session.startSpans[t.key] = startSpanFrom(history, t.key);
+    });
+    btnStart.disabled = false;
+    updateSetupHint();
+    startTask(0);
+  });
+}
+
+/* Today's training block starts at the highest span the student reached in
+ * their previous session, or at span 2 when there is none (or it was 0). */
+function startSpanFrom(history, taskKey) {
+  const before = session.startedAt.toISOString();
+  const rows = history
+    .filter(function (r) {
+      return r.id === session.id && r.task === taskKey && r.sessionStart < before;
+    })
+    .sort(function (a, b) {
+      return a.sessionStart < b.sessionStart ? -1 : a.sessionStart > b.sessionStart ? 1 : 0;
+    });
+  const last = rows[rows.length - 1];
+  return Math.max(SPAN_START, last ? Number(last.highestSpan) || 0 : 0);
+}
+
+function startNote() {
+  const span = session.startSpans[task().key] || SPAN_START;
+  return span > SPAN_START ? " Today you start at span " + span + ", your best from last time." : "";
 }
 
 function startTask(index) {
@@ -510,7 +545,7 @@ function startTask(index) {
       startPractice
     );
   } else {
-    showBridge(t.part + " · " + t.name, t.intro + " You have 5 minutes.", "Start", startTrial);
+    showBridge(t.part + " · " + t.name, t.intro + " You have 5 minutes." + startNote(), "Start", startTrial);
   }
 }
 
@@ -533,7 +568,8 @@ function endPractice() {
   recordSet(null, false);
   showBridge(
     "Practice finished",
-    "Now 5 minutes of training. Answers are no longer marked right or wrong — the correct answers are shown after you recall each set.",
+    "Now 5 minutes of training. Answers are no longer marked right or wrong — the correct answers are shown after you recall each set." +
+      startNote(),
     "Start",
     startTrial
   );
@@ -545,7 +581,7 @@ function startTrial() {
   /* The stream restarts so the training block opens on the same item, in the
    * same order, for every student in this lesson. */
   st.stream = task().stream(session.lesson);
-  st.span = SPAN_START;
+  st.span = session.startSpans[task().key] || SPAN_START;
   st.levelCorrect = 0;
   st.levelWrong = 0;
   st.highestPassed = 0;
@@ -765,8 +801,11 @@ function applySpanRule(correct) {
   if (correct) st.levelCorrect += 1;
   else st.levelWrong += 1;
 
-  if (st.levelCorrect >= t.upAfter) {
+  if (st.levelCorrect >= SPAN_REACHED_AT) {
     st.highestPassed = Math.max(st.highestPassed, st.span);
+  }
+
+  if (st.levelCorrect >= t.upAfter) {
     st.span += 1;
     st.levelCorrect = 0;
     st.levelWrong = 0;
@@ -932,6 +971,22 @@ function fetchServerHistory(id) {
       return [];
     }
   );
+}
+
+/* This device's history with the results sheet's folded in, and kept on the
+ * device for next time. Without a connection it is the device's alone. */
+function loadHistory(id) {
+  return fetchServerHistory(id).then(function (remote) {
+    const merged = mergeHistory(readHistory(), remote);
+    if (remote.length) {
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(merged));
+      } catch (err) {
+        /* storage unavailable; the merged copy still serves this session */
+      }
+    }
+    return merged;
+  });
 }
 
 /* ---------- progress screen ---------- */
@@ -1167,18 +1222,9 @@ function showProgress() {
   const local = readHistory();
   renderProgress(local);
   progressCards.classList.add("is-refreshing");
-  fetchServerHistory(session.id).then(function (remote) {
+  loadHistory(session.id).then(function (merged) {
     progressCards.classList.remove("is-refreshing");
-    if (!remote.length) return;
-    const merged = mergeHistory(local, remote);
-    if (merged.length > local.length) {
-      try {
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(mergeHistory(readHistory(), remote)));
-      } catch (err) {
-        /* ignore */
-      }
-      renderProgress(merged);
-    }
+    if (merged.length > local.length) renderProgress(merged);
   });
 }
 
