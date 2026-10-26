@@ -3,9 +3,8 @@
  * One session runs both tasks back to back — multiplication, then fraction
  * comparison — from a single entry of the student's ID and lesson. Every
  * student does the working-memory version: solve, hold, recall in order.
- * Each task opens with a 2-minute practice in lessons 1-3 (feedback on every
- * answer and on the recall order), then runs a full 5-minute training block
- * with no right/wrong marking; after each set the correct answers are shown.
+ * Each task is a full 5-minute training block with no practice and no
+ * right/wrong marking; after each set the correct answers are shown.
  *
  * Each task's training block starts at the highest span the student reached
  * in their previous session (span 2 the first time). Span rules, counted at
@@ -24,11 +23,9 @@
  * over the student's sessions and compares today with the previous session.
  */
 
-const PRACTICE_SECONDS = 120;
 const TRIAL_SECONDS = 300;
 const REVIEW_MS = 3600;
 const HOLD_MS = 750;
-const PRACTICE_LESSON_MAX = 3;
 const SPAN_START = 2;
 const HISTORY_KEY = "training.history";
 const CHART_DAYS = 15;
@@ -64,16 +61,12 @@ const solveProgress = document.getElementById("solve-progress");
 const solvePrompt = document.getElementById("solve-prompt");
 const solveChoices = document.getElementById("solve-choices");
 const solveFeedback = document.getElementById("solve-feedback");
-const solveGuidance = document.getElementById("solve-guidance");
-const btnSolveNext = document.getElementById("btn-solve-next");
 
 const phaseRecall = document.getElementById("phase-recall");
 const recallInstruction = document.getElementById("recall-instruction");
 const recallSlots = document.getElementById("recall-slots");
 const recallOptions = document.getElementById("recall-options");
 const btnRecallUndo = document.getElementById("btn-recall-undo");
-const recallGuidance = document.getElementById("recall-guidance");
-const btnRecallNext = document.getElementById("btn-recall-next");
 
 const phaseReview = document.getElementById("phase-review");
 const reviewGrid = document.getElementById("review-grid");
@@ -118,9 +111,7 @@ function comparisonHtml(pair) {
 
 function rowsWithSetNumbers(trials, build) {
   const rows = [];
-  const setNumber = { practice: 0, trial: 0 };
-  trials.forEach(function (trial) {
-    setNumber[trial.phase] += 1;
+  trials.forEach(function (trial, n) {
     const sequence =
       trial.sequenceCorrect === null || trial.sequenceCorrect === undefined
         ? ""
@@ -128,7 +119,7 @@ function rowsWithSetNumbers(trials, build) {
         ? 1
         : 0;
     trial.entries.forEach(function (entry, i) {
-      rows.push(build(trial, setNumber[trial.phase], sequence, entry, i));
+      rows.push(build(trial, n + 1, sequence, entry, i));
     });
   });
   return rows;
@@ -353,7 +344,7 @@ const session = {
   lesson: 1,
   startedAt: null,
   taskIndex: 0,
-  phase: "idle", // "practice" | "trial"
+  phase: "idle", // "trial" while the clock runs; written to the CSV phase column
   token: 0, // bumped at every phase change; stale timeouts check it
   deadline: 0,
   ticker: null,
@@ -376,7 +367,7 @@ function freshState() {
     levelCorrect: 0,
     levelWrong: 0,
     highestPassed: 0,
-    counts: { practice: { total: 0, correct: 0 }, trial: { total: 0, correct: 0 } },
+    counts: { total: 0, correct: 0 },
     trials: [],
     set: null,
     recall: null,
@@ -475,9 +466,7 @@ function updateSetupHint() {
     (lesson <= 4
       ? "; fraction pairs with the same denominator or the same numerator. "
       : "; fraction pairs also compare with ½. ") +
-    (lesson <= PRACTICE_LESSON_MAX
-      ? "Each part starts with a 2-minute practice, then 5 minutes of training (about 14 minutes in all)."
-      : "Each part is 5 minutes of training (about 10 minutes in all).");
+    "Each part is 5 minutes of training (about 10 minutes in all).";
 }
 
 function beginSession() {
@@ -536,55 +525,15 @@ function startTask(index) {
   const t = task();
   setTone(t.tone);
   session.results[t.key] = freshState();
-
-  if (session.lesson <= PRACTICE_LESSON_MAX) {
-    showBridge(
-      t.part + " · " + t.name,
-      t.intro + " First, a 2-minute practice that tells you whether you are right.",
-      "Start practice",
-      startPractice
-    );
-  } else {
-    showBridge(t.part + " · " + t.name, t.intro + " You have 5 minutes." + startNote(), "Start", startTrial);
-  }
-}
-
-function startPractice() {
-  const st = state();
-  beginPhase("practice");
-  /* Practice draws different items of the same lesson, so it cannot shift
-   * where the training block starts. It stays at span 2. */
-  st.stream = task().stream(session.lesson, 500000);
-  st.span = SPAN_START;
-  taskLabel.textContent = task().part + " · Practice";
-  taskSubtitle.textContent = "Practice. You are told whether each answer is right.";
-  showScreen("task");
-  startClock(PRACTICE_SECONDS, endPractice);
-  nextSet();
-}
-
-function endPractice() {
-  endPhase();
-  recordSet(null, false);
-  showBridge(
-    "Practice finished",
-    "Now 5 minutes of training. Answers are no longer marked right or wrong — the correct answers are shown after you recall each set." +
-      startNote(),
-    "Start",
-    startTrial
-  );
+  showBridge(t.part + " · " + t.name, t.intro + " You have 5 minutes." + startNote(), "Start", startTrial);
 }
 
 function startTrial() {
   const st = state();
   beginPhase("trial");
-  /* The stream restarts so the training block opens on the same item, in the
-   * same order, for every student in this lesson. */
+  /* Every student in this lesson meets the same items in the same order. */
   st.stream = task().stream(session.lesson);
   st.span = session.startSpans[task().key] || SPAN_START;
-  st.levelCorrect = 0;
-  st.levelWrong = 0;
-  st.highestPassed = 0;
   taskLabel.textContent = task().part + " · " + task().name;
   taskSubtitle.textContent = "Solve, remember your answer, then recall the set in order.";
   showScreen("task");
@@ -632,9 +581,6 @@ function renderItem() {
   showPhase("solve");
   solveFeedback.textContent = "";
   solveFeedback.className = "feedback";
-  solveGuidance.innerHTML = "";
-  solveGuidance.hidden = true;
-  btnSolveNext.hidden = true;
   solveProgress.textContent = task().itemNoun + " " + (s.index + 1) + " of " + s.items.length;
   task().render(s.items[s.index], answerItem);
 }
@@ -649,39 +595,18 @@ function answerItem(response) {
   const correctKey = t.keyOf(t.correctAnswer(item));
   const responseKey = t.keyOf(response);
   const correct = responseKey === correctKey;
-  const counts = st.counts[session.phase];
-  counts.total += 1;
+  st.counts.total += 1;
   if (correct) {
-    counts.correct += 1;
+    st.counts.correct += 1;
     s.correct += 1;
   }
   s.responses.push({ item: item, response: response, correct: correct });
 
-  const practice = session.phase === "practice";
+  /* nothing is marked right or wrong; the tap only shows it registered */
   solveChoices.querySelectorAll(".choice").forEach(function (button) {
     button.disabled = true;
-    if (button.dataset.key === responseKey) {
-      /* practice marks right or wrong; training only shows the tap registered */
-      button.classList.add(practice ? (correct ? "is-correct" : "is-wrong") : "is-picked");
-    }
-    if (practice && !correct && button.dataset.key === correctKey) {
-      button.classList.add("is-answer");
-    }
+    if (button.dataset.key === responseKey) button.classList.add("is-picked");
   });
-
-  if (practice) {
-    solveFeedback.textContent = correct ? "Yes." : "Not quite.";
-    solveFeedback.className = "feedback " + (correct ? "is-ok" : "is-no");
-    solveGuidance.innerHTML =
-      t.solvedHtml(item) +
-      '<span class="hold-line">Remember ' +
-      t.html(t.correctAnswer(item)) +
-      "</span>";
-    solveGuidance.hidden = false;
-    btnSolveNext.hidden = false;
-    btnSolveNext.onclick = advanceItem;
-    return;
-  }
 
   solveFeedback.textContent = "Remember it.";
   solveFeedback.className = "feedback is-hold";
@@ -704,19 +629,15 @@ function advanceItem() {
 function renderRecall() {
   const t = task();
   const st = state();
-  /* Practice corrects each answer on the spot, so the student holds the
-   * correct one; in training they can only hold what they chose. */
+  /* The student can only hold what they chose, so that is what they recall. */
   const targets = st.set.responses.map(function (r) {
-    return session.phase === "practice" ? t.correctAnswer(r.item) : r.response;
+    return r.response;
   });
   st.recall = { targets: targets, entered: [], done: false, options: t.pool(targets, st.set.items) };
 
   showPhase("recall");
   recallInstruction.innerHTML =
     "Tap the " + targets.length + " answers you chose, in the same <strong>order</strong>.";
-  recallGuidance.innerHTML = "";
-  recallGuidance.hidden = true;
-  btnRecallNext.hidden = true;
   renderRecallSlots();
 
   recallOptions.innerHTML = "";
@@ -778,17 +699,6 @@ function submitRecall() {
     return t.keyOf(target) === t.keyOf(r.entered[i]);
   });
   recordSet(correct, true);
-
-  if (session.phase === "practice") {
-    recallGuidance.innerHTML = correct
-      ? "That is the right order."
-      : "The order was " + r.targets.map(t.html).join(", ") + ".";
-    recallGuidance.hidden = false;
-    btnRecallNext.hidden = false;
-    btnRecallNext.onclick = renderReview;
-    return;
-  }
-
   applySpanRule(correct);
   later(renderReview, 400);
 }
@@ -833,8 +743,8 @@ function renderReview() {
 
 /* ---------- records ---------- */
 
-/* Every set is written down, practice as well as training, one entry per item.
- * `complete` is false for a set the clock cut short. */
+/* Every set is written down, one entry per item. `complete` is false for a
+ * set the clock cut short. */
 function recordSet(sequenceCorrect, complete) {
   const t = task();
   const st = state();
@@ -852,7 +762,7 @@ function recordSet(sequenceCorrect, complete) {
 
 function taskRecord(t) {
   const st = session.results[t.key];
-  const counts = st.counts.trial;
+  const counts = st.counts;
   return {
     id: session.id,
     lesson: session.lesson,

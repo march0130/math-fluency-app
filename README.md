@@ -23,11 +23,8 @@ the device or reaches the spreadsheet. Keep the name-to-ID key offline.
 One session per day covers both tasks. Enter the student ID and lesson (1–15) once; the page
 runs **multiplication, then fraction comparison**, then shows the progress screen. There is a
 single group: every student does the working-memory version (solve, hold, recall in order).
-
-| Lessons | Each part | Whole session |
-|---|---|---|
-| 1–3 | 2-minute practice, then 5 minutes of training | about 14 minutes |
-| 4–15 | 5 minutes of training | about 10 minutes |
+Each part is **5 minutes of training with no practice**, in every lesson, so a session takes
+about 10 minutes.
 
 - **Items** are seeded from the lesson number, so every student in a lesson meets the same
   items in the same order.
@@ -37,8 +34,6 @@ single group: every student does the working-memory version (solve, hold, recall
   - *Fraction comparison:* denominators 2, 3, 4, 5, 6, 8, 10, 12. Lessons 1–4 use
     shared-denominator and shared-numerator pairs, the latter beginning with unit
     fractions; lessons 5–15 add a fraction greater than one half compared with one half.
-- **Practice** (lessons 1–3) marks each answer right or wrong and shows the correct recall
-  order. It stays at span 2 and is recorded separately.
 - **Training** marks nothing right or wrong while a set runs. After recall, every item in
   the set is shown with its correct answer (`3 × 4 = 12`, `3/8 < 5/8`). No feedback is given
   on the recall sequence.
@@ -54,7 +49,7 @@ single group: every student does the working-memory version (solve, hold, recall
 reached in their previous session** of that task (see below), read from the `daily-summary`
 sheet and this device's own record. The first session, or a previous session with a highest
 span of 0, starts at span 2. The setup screen waits for the lookup (up to 10 seconds); without
-a connection it uses what this device has. Practice (lessons 1–3) always stays at span 2.
+a connection it uses what this device has.
 
 Recalls are **counted at the current span, not in a row**; both counts start again whenever
 the span changes. The span moves on the **recall sequence alone**, scored against the answers
@@ -114,7 +109,8 @@ same at pretest and posttest. Open `test-items.html` to review them.
 ### Memory test
 
 Multiplication first, then fraction comparison. Each part starts with two practice sets at
-span 2 that give the same feedback as training practice. Then comes an adaptive span test,
+span 2 that mark each answer right or wrong and show the correct recall order. Then comes an
+adaptive span test,
 with no feedback and no correct-answer review, that looks for the **highest span the
 student can reach**. Both parts use the same rules:
 
@@ -184,11 +180,12 @@ keeps its old name so existing sheets line up).
 
 ## Records
 
-Both training tasks record every item and every sequence, in practice as well as in the
-training block, as **one row per item** in the `multiplication` and `fraction` sheets:
-`phase` (practice/trial), `set`, `span`, `set_complete`, the item, the correct answer, the
-student's response, `answer_correct`, and the set's `sequence_correct`. A day's two parts
-share one `session_start`, so they can be joined.
+Both training tasks record every item and every sequence as **one row per item** in the
+`multiplication` and `fraction` sheets: `phase`, `set`, `span`, `set_complete`, the item, the
+correct answer, the student's response, `answer_correct`, and the set's `sequence_correct`.
+A day's two parts share one `session_start`, so they can be joined. `phase` is always `trial`
+now that training has no practice; earlier rows may still say `practice`, and the column
+stays so new rows line up with the existing header.
 
 Each training session also adds **one line per task to `daily-summary`**: student ID, session
 start, date, lesson, condition, highest span, accuracy, items and items correct. This

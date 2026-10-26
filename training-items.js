@@ -3,7 +3,7 @@
  * Ported unchanged from the original single-task pages, so a lesson produces
  * exactly the same items in the same order as before. Both streams are seeded
  * from the lesson number: every student in a lesson meets the same items in
- * both conditions. Practice draws on a different seed of the same lesson.
+ * the same order.
  *
  * Everything sits inside one object so nothing collides with the page script.
  */
@@ -62,8 +62,8 @@ const TRAINING_ITEMS = (function () {
     return shuffle(options, rng);
   }
 
-  function multiplicationStream(lesson, seedOffset) {
-    const rng = mulberry32(lesson * 6271 + 29 + (seedOffset || 0));
+  function multiplicationStream(lesson) {
+    const rng = mulberry32(lesson * 6271 + 29);
     const max = factorMax(lesson);
     const recent = [];
 
@@ -146,8 +146,8 @@ const TRAINING_ITEMS = (function () {
    * use shared-denominator and shared-numerator pairs, lessons 5-15 add the
    * greater-than-one-half comparison. Shared-numerator pairs begin with unit
    * fractions. */
-  function fractionStream(lesson, seedOffset) {
-    const rng = mulberry32(lesson * 7919 + 13 + (seedOffset || 0));
+  function fractionStream(lesson) {
+    const rng = mulberry32(lesson * 7919 + 13);
     const types =
       lesson <= 4 ? ["sameDen", "sameNum"] : ["sameDen", "sameNum", "vsHalf"];
     const recent = [];
